@@ -90,7 +90,15 @@ function ActivityRow({ activity }) {
  */
 function RecentActivities({ activities }) {
   return (
-    <Card sx={{ p: 3, height: '100%' }}>
+    <Card
+      sx={{
+        p: 3,
+        height: 420,
+        borderRadius: 2,
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
       <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 0.5 }}>
         Recent Activities
       </Typography>
@@ -100,11 +108,12 @@ function RecentActivities({ activities }) {
 
       <Box
         sx={{
-          maxHeight: 420,
+          flex: 1,
+          minHeight: 0,
           overflowY: 'auto',
           pr: 0.5,
-          '&::-webkit-scrollbar': { width: 4 },
-          '&::-webkit-scrollbar-thumb': { borderRadius: 4, bgcolor: '#c7cce0' },
+          scrollbarWidth: 'none',
+          '&::-webkit-scrollbar': { display: 'none' },
         }}
       >
         {activities.map((activity) => (

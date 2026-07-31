@@ -44,7 +44,7 @@ function BrandMark({ collapsed }) {
 }
 
 const SIDEBAR_ITEM_HEIGHT = 44;
-const SIDEBAR_ITEM_RADIUS = 10;
+const SIDEBAR_ITEM_RADIUS = 16;
 const SIDEBAR_TOGGLE_SIZE = 40;
 const SIDEBAR_TOGGLE_FLOAT_OFFSET = 20;
 const SIDEBAR_TOGGLE_FLOAT_RIGHT = `calc(100vw - ${SIDEBAR_WIDTH_COLLAPSED + SIDEBAR_TOGGLE_FLOAT_OFFSET}px)`;
@@ -60,10 +60,12 @@ const SIDEBAR_ITEM_SX = {
   color: 'rgba(255,255,255,0.72)',
   transition: 'background-color 180ms ease, color 180ms ease',
   '&:hover': {
+    borderRadius: 0,
     bgcolor: tokens.color.navy700,
     color: '#fff',
   },
   '&.active': {
+    borderRadius: 0,
     bgcolor: tokens.color.navy700,
     color: '#fff',
   },
@@ -87,6 +89,7 @@ function SidebarItem({
       justifyContent: collapsed ? 'center' : 'space-between',
       px: collapsed ? 1 : 1.75,
       ...(children && { width: '100%' }),
+      ...(isActive && { borderRadius: 0 }),
     },
   };
 
@@ -191,7 +194,7 @@ function NavList({ collapsed, onNavigate }) {
   return (
     <List sx={{ px: collapsed ? 1 : 1.5, py: 1 }}>
       {NAV_ITEMS.map(({ label, path, icon: Icon, children }) => {
-        const isActiveParent = pathname === path;
+        const isActiveParent = pathname === path || children?.some(({ path: childPath }) => pathname === childPath);
         const isExpanded = Boolean(expanded[path]);
 
         const parentItem = (

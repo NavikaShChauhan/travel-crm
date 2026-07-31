@@ -28,12 +28,11 @@ export const NAV_ITEMS = [
   { label: 'Dashboard', path: ROUTES.DASHBOARD, icon: MdSpaceDashboard },
   { label: 'Inquiry Engine', path: ROUTES.INQUIRY, icon: MdOutlineForum },
   {
-    label: 'Sales',
+    label: 'Sales Engine',
     path: ROUTES.SALES,
     icon: MdOutlineTrendingUp,
     children: [
       { label: 'Dashboard', path: `${ROUTES.SALES}/dashboard`, icon: MdOutlineDashboard },
-      { label: 'Leads', path: `${ROUTES.SALES}/leads`, icon: MdOutlineGroup },
       { label: 'Proposal', path: `${ROUTES.SALES}/proposal`, icon: MdOutlineDescription },
       { label: 'Follow Up', path: `${ROUTES.SALES}/follow-up`, icon: MdOutlineSchedule },
       { label: 'Negotiation', path: `${ROUTES.SALES}/negotiation`, icon: MdOutlineHandshake },
