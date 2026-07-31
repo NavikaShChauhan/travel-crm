@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, useState, useCallback } from 'react';
+import { createContext, useContext, useMemo, useState, useCallback, useEffect } from 'react';
 
 /**
  * SidebarContext
@@ -10,7 +10,15 @@ import { createContext, useContext, useMemo, useState, useCallback } from 'react
 const SidebarContext = createContext(undefined);
 
 export function SidebarProvider({ children }) {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const STORAGE_KEY = 'voyage_sidebar_collapsed_v1';
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : false;
+    } catch (e) {
+      return false;
+    }
+  });
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   const toggleCollapsed = useCallback(() => setIsCollapsed((prev) => !prev), []);
@@ -21,6 +29,15 @@ export function SidebarProvider({ children }) {
     () => ({ isCollapsed, toggleCollapsed, isMobileOpen, openMobile, closeMobile }),
     [isCollapsed, toggleCollapsed, isMobileOpen, openMobile, closeMobile]
   );
+
+  // Persist collapsed state
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(isCollapsed));
+    } catch (e) {
+      // ignore
+    }
+  }, [isCollapsed]);
 
   return <SidebarContext.Provider value={value}>{children}</SidebarContext.Provider>;
 }

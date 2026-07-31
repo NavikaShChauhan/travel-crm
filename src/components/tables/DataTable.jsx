@@ -38,10 +38,40 @@ function DataTable({
   onPageChange,
   onPageSizeChange,
   getRowKey = (row) => row.id,
+  showEmptyState = true,
 }) {
   if (isLoading) return <PageLoader label="Loading records…" />;
   if (!rows || rows.length === 0) {
-    return <EmptyState title="No records found" description="Try adjusting your filters." />;
+    if (showEmptyState) {
+      return <EmptyState title="No records found" description="Try adjusting your filters." />;
+    }
+
+    return (
+      <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'hidden' }}>
+        <TableContainer>
+          <Table size="small">
+            <TableHead>
+              <TableRow sx={{ '& th': { fontWeight: 700, bgcolor: 'background.default' } }}>
+                {columns.map((col) => (
+                  <TableCell key={col.key}>{col.label}</TableCell>
+                ))}
+              </TableRow>
+            </TableHead>
+            <TableBody />
+          </Table>
+        </TableContainer>
+        {onPageChange && (
+          <TablePagination
+            component="div"
+            count={totalCount ?? 0}
+            page={page}
+            onPageChange={(_e, newPage) => onPageChange(newPage)}
+            rowsPerPage={pageSize}
+            onRowsPerPageChange={(e) => onPageSizeChange?.(Number(e.target.value))}
+          />
+        )}
+      </Paper>
+    );
   }
 
   return (
@@ -49,15 +79,22 @@ function DataTable({
       <TableContainer>
         <Table size="small">
           <TableHead>
-            <TableRow sx={{ '& th': { fontWeight: 700, bgcolor: 'background.default' } }}>
+            <TableRow sx={{ '& th': { fontWeight: 700, bgcolor: '#FFFFFF' } }}>
               {columns.map((col) => (
                 <TableCell key={col.key}>{col.label}</TableCell>
               ))}
             </TableRow>
           </TableHead>
           <TableBody>
-            {rows.map((row) => (
-              <TableRow key={getRowKey(row)} hover>
+            {rows.map((row, index) => (
+              <TableRow
+                key={getRowKey(row)}
+                hover
+                sx={{
+                  bgcolor: index % 2 === 0 ? '#FFFFFF' : '#F8FAFC',
+                  '&:hover': { bgcolor: '#EEF2FF' },
+                }}
+              >
                 {columns.map((col) => (
                   <TableCell key={col.key}>
                     {col.render ? col.render(row) : row[col.key]}

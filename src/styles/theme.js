@@ -12,20 +12,20 @@ import { createTheme } from '@mui/material/styles';
  */
 export const tokens = {
   color: {
-    navy900: '#0B1526', // deepest ink — sidebar background
-    navy800: '#12203D', // sidebar surface / headers
-    navy700: '#1B2A4A', // hover / active surfaces on dark
-    navy600: '#2E4270', // borders on dark surfaces
-    gold500: '#D9A441', // primary accent — compass gold
+    navy900: '#223559', // sidebar background
+    navy800: '#31446E', // sidebar hover / active state
+    navy700: '#31446E', // reused for active nav highlight
+    navy600: '#475569', // navigation icon default / muted dark text
+    gold500: '#D49A15', // kept as a muted semantic accent only if required elsewhere
     gold600: '#BF8B2C',
-    teal500: '#2F8F86', // confirmed / success / booked
-    coral500: '#D6604F', // alerts / overdue / at-risk
-    ink900: '#161B2C', // primary text
-    ink600: '#5B6479', // secondary text
-    ink400: '#8B93A7', // muted / placeholder text
-    line200: '#E6E9F0', // hairline borders
-    surface0: '#F5F6FA', // app background
-    surface1: '#FFFFFF', // card / paper surface
+    teal500: '#2F8F86', // semantic success / confirmed states
+    coral500: '#D6604F', // semantic warning / error 
+    ink900: '#1F2937', // topbar text / primary dark gray
+    ink600: '#475569', // topbar icon color / secondary text
+    ink400: '#64748B', // muted text
+    line200: '#E5E7EB', // borders / subtle dividers
+    surface0: '#F0F1F9', // main app background
+    surface1: '#FFFFFF', // card / table header / panel surface
   },
   font: {
     display: '"Space Grotesk", "Inter", sans-serif',
@@ -96,9 +96,27 @@ const theme = createTheme({
     },
     MuiButton: {
       styleOverrides: {
-        root: { borderRadius: tokens.radius.sm, boxShadow: 'none' },
+        root: {
+          borderRadius: tokens.radius.sm,
+          boxShadow: 'none',
+          textTransform: 'none',
+        },
         containedPrimary: {
-          '&:hover': { boxShadow: 'none' },
+          bgcolor: tokens.color.navy900,
+          color: '#FFFFFF',
+          '&:hover': {
+            bgcolor: tokens.color.navy800,
+            boxShadow: 'none',
+          },
+        },
+        outlined: {
+          bgcolor: '#FFFFFF',
+          borderColor: '#D1D5DB',
+          color: tokens.color.navy900,
+          '&:hover': {
+            borderColor: tokens.color.navy800,
+            bgcolor: '#F8FAFC',
+          },
         },
       },
     },
@@ -117,7 +135,8 @@ const theme = createTheme({
         root: {
           border: `1px solid ${tokens.color.line200}`,
           borderRadius: tokens.radius.md,
-          boxShadow: 'none',
+          boxShadow: '0 1px 3px rgba(15, 23, 42, 0.06)',
+          backgroundColor: tokens.color.surface1,
         },
       },
     },
@@ -131,6 +150,7 @@ const theme = createTheme({
         root: {
           boxShadow: 'none',
           borderBottom: `1px solid ${tokens.color.line200}`,
+          backgroundColor: tokens.color.surface1,
         },
       },
     },

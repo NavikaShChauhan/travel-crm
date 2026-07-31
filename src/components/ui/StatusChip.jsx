@@ -9,15 +9,15 @@ import { Chip } from '@mui/material';
  * Usage: <StatusChip status="confirmed" />
  */
 const STATUS_STYLES = {
-  new: { bg: '#EAF0FF', color: '#2A4FBF', label: 'New' },
-  in_progress: { bg: '#FFF3E0', color: '#B96A00', label: 'In Progress' },
-  pending: { bg: '#FFF3E0', color: '#B96A00', label: 'Pending' },
-  confirmed: { bg: '#E6F5F3', color: '#1E6F66', label: 'Confirmed' },
-  paid: { bg: '#E6F5F3', color: '#1E6F66', label: 'Paid' },
-  completed: { bg: '#E6F5F3', color: '#1E6F66', label: 'Completed' },
-  cancelled: { bg: '#FBEAE8', color: '#B23A2C', label: 'Cancelled' },
-  overdue: { bg: '#FBEAE8', color: '#B23A2C', label: 'Overdue' },
-  draft: { bg: '#EEF0F5', color: '#5B6479', label: 'Draft' },
+  new: { bg: '#FFFFFF', color: '#223559', border: '#223559', label: 'New' },
+  in_progress: { bg: '#F3F4F6', color: '#475569', border: '#D1D5DB', label: 'In Progress' },
+  pending: { bg: '#F3F4F6', color: '#475569', border: '#D1D5DB', label: 'Pending' },
+  confirmed: { bg: '#FFFFFF', color: '#223559', border: '#223559', label: 'Confirmed' },
+  paid: { bg: '#FFFFFF', color: '#223559', border: '#223559', label: 'Paid' },
+  completed: { bg: '#FFFFFF', color: '#223559', border: '#223559', label: 'Completed' },
+  cancelled: { bg: '#F3F4F6', color: '#475569', border: '#D1D5DB', label: 'Cancelled' },
+  overdue: { bg: '#F3F4F6', color: '#475569', border: '#D1D5DB', label: 'Overdue' },
+  draft: { bg: '#FFFFFF', color: '#223559', border: '#D1D5DB', label: 'Draft' },
 };
 
 function StatusChip({ status = 'draft', label }) {
@@ -31,6 +31,7 @@ function StatusChip({ status = 'draft', label }) {
       sx={{
         bgcolor: style.bg,
         color: style.color,
+        border: `1px solid ${style.border}`,
         fontWeight: 600,
         fontSize: 12,
       }}

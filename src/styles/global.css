@@ -11,6 +11,8 @@ body,
 body {
   margin: 0;
   font-family: 'Inter', 'Helvetica Neue', sans-serif;
+  background: #F0F1F9;
+  color: #1F2937;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
