@@ -1,13 +1,494 @@
 /**
  * Mock data for the "itinerary" module.
  * -----------------------------------------------------------------------
- * Until the Express + MongoDB backend exists, module pages/components
- * can import from here directly to build real UI against realistic
- * shapes. When the backend is ready, delete this file and switch the
- * relevant page(s) to call `services/itinerary.service.js` instead —
- * no page/component code should need to change beyond that swap.
- *
- * TODO: replace with actual API-backed data once
- * `services/itinerary.service.js` is implemented.
+ * Pre-populated itineraries for high-quality representation.
+ * Aligned with the dashboard and planner designs provided.
  */
-export const MOCK_ITINERARY = [];
+export const MOCK_ITINERARY = [
+  {
+    id: 'ITIN-2026-0001',
+    name: 'Himancghal trip',
+    customerName: 'Aarav Mehta',
+    phone: '+91 98765 43210',
+    destination: 'Shimla, Manali, Dharamshala',
+    coverImage: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80',
+    startDate: '2026-08-01',
+    endDate: '2026-08-05',
+    durationDays: 5,
+    durationNights: 4,
+    travelers: 2,
+    adults: 2,
+    children: 0,
+    infants: 0,
+    type: 'Family',
+    amount: 21357.25,
+    description: 'An scenic 4-night tour package across Himachal Pradesh including Shimla, Manali, and Dharamshala. Includes flight bookings, transport by SUV, and luxury resort stays.',
+    status: 'Draft',
+    createdAt: '2026-07-30T10:00:00.000Z',
+    days: [
+      { dayNumber: 1, title: 'Shimla', description: 'Arrival in shimla airport', image: 'https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=600&q=80' },
+      { dayNumber: 2, title: 'Manali', description: 'Explore Mall Road and local landmarks', image: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=600&q=80' },
+      { dayNumber: 3, title: 'Manali', description: 'Excursion to Solang Valley and activities', image: 'https://images.unsplash.com/photo-1544644181-1484b3fdfc62?auto=format&fit=crop&w=600&q=80' },
+      { dayNumber: 4, title: 'Dharamshala', description: 'Scenic drive and temple visits', image: 'https://images.unsplash.com/photo-1564507592333-c60657eea523?auto=format&fit=crop&w=600&q=80' },
+      { dayNumber: 5, title: 'Dharamshala', description: 'Departure and return flight', image: 'https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?auto=format&fit=crop&w=600&q=80' }
+    ],
+    services: [
+      {
+        id: 'srv-101',
+        dayNumber: 1,
+        type: 'Flight',
+        supplier: 'AllianceAir',
+        title: 'Flight - DEL to IXC - AllianceAir',
+        fromPort: 'Delhi (DEL)',
+        toPort: 'Chandigarh (IXC)',
+        cabinClass: 'Economy',
+        departureDate: '2026-08-01T10:30',
+        adultCost: 2298.00,
+        totalCost: 4596.00,
+        supplierCost: 4200.00,
+        autoSupplierCost: true,
+        description: 'Created from Live Flight Search. Journey duration: 1h 15m. Seat reservations included.',
+        images: []
+      },
+      {
+        id: 'srv-102',
+        dayNumber: 1,
+        type: 'Transport',
+        supplier: 'Himachal Cab Services',
+        title: 'Airport Transfer Shimla',
+        vehicleType: 'SUV',
+        days: 1,
+        dailyRate: 3500.00,
+        totalCost: 3500.00,
+        supplierCost: 3000.00,
+        autoSupplierCost: true,
+        description: 'Private SUV pickup from Chandigarh Airport to Shimla Hotel.',
+        images: []
+      },
+      {
+        id: 'srv-103',
+        dayNumber: 2,
+        type: 'Hotel',
+        supplier: 'Shimla Heights Resort',
+        title: 'Shimla Luxury Resort & Spa - Double Room',
+        packageOption: '5 Star',
+        location: 'Shimla',
+        starCategory: '5 Star',
+        roomType: 'Double',
+        mealPlan: 'CP',
+        nights: 1,
+        rooms: {
+          Double: { count: 1, costPerNight: 8000.00, total: 8000.00 }
+        },
+        totalCost: 8000.00,
+        supplierCost: 7500.00,
+        autoSupplierCost: true,
+        description: 'Stunning valley view, breakfast buffet included.',
+        images: []
+      },
+      {
+        id: 'srv-104',
+        dayNumber: 3,
+        type: 'Sightseeing',
+        title: 'Solang Valley Adventure Passes',
+        location: 'Manali',
+        adultCost: 2630.62,
+        totalCost: 5261.25,
+        supplierCost: 5000.00,
+        autoSupplierCost: true,
+        description: 'Includes ropeway ride and paragliding coupons.'
+      }
+    ]
+  },
+  {
+    id: 'ITIN-2026-0002',
+    name: 'Chardham Yatra',
+    customerName: 'Ramesh Sharma',
+    phone: '+91 99112 23344',
+    destination: 'Haridwar, guptakashi, Kedarnath',
+    coverImage: 'https://images.unsplash.com/photo-1564507592333-c60657eea523?auto=format&fit=crop&w=800&q=80',
+    startDate: '2026-09-10',
+    endDate: '2026-09-14',
+    durationDays: 4,
+    durationNights: 3,
+    travelers: 2,
+    adults: 2,
+    children: 0,
+    infants: 0,
+    type: 'Solo',
+    amount: 0.00,
+    description: 'Chardham Yatra packages with stops at Haridwar, Guptakashi, and Kedarnath temple.',
+    status: 'Draft',
+    createdAt: '2026-07-29T14:30:00.000Z',
+    days: [
+      { dayNumber: 1, title: 'Haridwar', description: 'Ganga Aarti and check-in', image: 'https://images.unsplash.com/photo-1564507592333-c60657eea523?auto=format&fit=crop&w=600&q=80' },
+      { dayNumber: 2, title: 'guptakashi', description: 'Drive to Guptakashi', image: 'https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=600&q=80' },
+      { dayNumber: 3, title: 'Kedarnath', description: 'Kedarnath Temple Darshan', image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80' },
+      { dayNumber: 4, title: 'Kedarnath', description: 'Return and departure', image: 'https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?auto=format&fit=crop&w=600&q=80' }
+    ],
+    services: []
+  },
+  {
+    id: 'ITIN-2026-0003',
+    name: 'arif farooqui - Full Package - Manali',
+    customerName: 'Arif Farooqui',
+    phone: '+91 97776 65544',
+    destination: 'manali town, Solang Valley, Atal Tunnel & Sissu, Naggar & Departure',
+    coverImage: 'https://images.unsplash.com/photo-1544644181-1484b3fdfc62?auto=format&fit=crop&w=800&q=80',
+    startDate: '2026-08-05',
+    endDate: '2026-08-09',
+    durationDays: 5,
+    durationNights: 4,
+    travelers: 3,
+    adults: 3,
+    children: 0,
+    infants: 0,
+    type: 'Friends',
+    amount: 30000.00,
+    description: 'Manali full package tour covers local Solang valley sightseeing, Sissu waterfalls via Atal Tunnel, and historic Naggar castle visit.',
+    status: 'Confirmed',
+    createdAt: '2026-07-30T09:15:00.000Z',
+    days: [
+      { dayNumber: 1, title: 'manali town', description: 'Arrival in Manali Town and sightseeing', image: 'https://images.unsplash.com/photo-1544644181-1484b3fdfc62?auto=format&fit=crop&w=600&q=80' },
+      { dayNumber: 2, title: 'Solang Valley', description: 'Adventure and snow sports in Solang', image: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=600&q=80' },
+      { dayNumber: 3, title: 'Atal Tunnel & Sissu', description: 'Excursion through Atal Tunnel to Lahaul valley', image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80' },
+      { dayNumber: 4, title: 'Naggar & Departure', description: 'Visit historic Naggar Castle and local markets', image: 'https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?auto=format&fit=crop&w=600&q=80' },
+      { dayNumber: 5, title: 'Departure', description: 'Travel back to Delhi/Chandigarh', image: 'https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=600&q=80' }
+    ],
+    services: [
+      {
+        id: 'srv-301',
+        dayNumber: 1,
+        type: 'Hotel',
+        supplier: 'Alpine Chalet Manali',
+        title: 'Alpine Chalet Manali - Deluxe Rooms',
+        location: 'Manali',
+        starCategory: '4 Star',
+        roomType: 'Double',
+        mealPlan: 'MAP',
+        nights: 4,
+        rooms: {
+          Double: { count: 1, costPerNight: 5000, total: 20000 }
+        },
+        totalCost: 20000,
+        description: 'Includes breakfast and dinner daily.'
+      },
+      {
+        id: 'srv-302',
+        dayNumber: 3,
+        type: 'Transport',
+        title: 'Full Day Private SUV Rental',
+        vehicleType: 'SUV',
+        days: 2,
+        dailyRate: 5000.00,
+        totalCost: 10000,
+        description: 'Guided tour to Sissu waterfalls via Atal Tunnel.'
+      }
+    ]
+  },
+  {
+    id: 'ITIN-2026-0004',
+    name: 'KASHMIR PACKAGE',
+    customerName: 'Ananya Sen',
+    phone: '+91 91234 56789',
+    destination: 'Srinagar, Gulmarg, Pahalgam, Sonmarg',
+    coverImage: 'https://images.unsplash.com/photo-1566837945700-30057527ade0?auto=format&fit=crop&w=800&q=80',
+    startDate: '2026-09-15',
+    endDate: '2026-09-22',
+    durationDays: 8,
+    durationNights: 7,
+    travelers: 4,
+    adults: 4,
+    children: 0,
+    infants: 0,
+    type: 'Family',
+    amount: 50000.00,
+    description: 'Beautiful 7-night exploration of Paradise on Earth. Enjoy Dal Lake houseboats, Gondola rides in Gulmarg, and valleys of Pahalgam.',
+    status: 'Confirmed',
+    createdAt: '2026-07-28T09:00:00.000Z',
+    days: [
+      { dayNumber: 1, title: 'Srinagar', description: 'Houseboat Check-in & Shikara Ride', image: 'https://images.unsplash.com/photo-1566837945700-30057527ade0?auto=format&fit=crop&w=600&q=80' },
+      { dayNumber: 2, title: 'Srinagar', description: 'Mughal Gardens Sightseeing', image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80' },
+      { dayNumber: 3, title: 'Gulmarg', description: 'Travel to Gulmarg & Gondola Ride', image: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=600&q=80' },
+      { dayNumber: 4, title: 'Gulmarg', description: 'Skiing & Winter Sports activity', image: 'https://images.unsplash.com/photo-1544644181-1484b3fdfc62?auto=format&fit=crop&w=600&q=80' },
+      { dayNumber: 5, title: 'Pahalgam', description: 'Drive to Pahalgam & Betaab Valley', image: 'https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=600&q=80' },
+      { dayNumber: 6, title: 'Pahalgam', description: 'Aru Valley & Pony Rides', image: 'https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?auto=format&fit=crop&w=600&q=80' },
+      { dayNumber: 7, title: 'Sonmarg', description: 'Day trip to Golden Meadow', image: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=600&q=80' },
+      { dayNumber: 8, title: 'Srinagar', description: 'Departure', image: 'https://images.unsplash.com/photo-1566837945700-30057527ade0?auto=format&fit=crop&w=600&q=80' }
+    ],
+    services: [
+      {
+        id: 'srv-401',
+        dayNumber: 1,
+        type: 'Hotel',
+        supplier: 'Royal Houseboats Srinagar',
+        title: 'Premium Houseboat Stay - Dal Lake',
+        location: 'Srinagar',
+        starCategory: '5 Star',
+        roomType: 'Double',
+        mealPlan: 'MAP',
+        nights: 2,
+        rooms: { Double: { count: 2, costPerNight: 5000, total: 20000 } },
+        totalCost: 20000,
+        description: 'Includes traditional Kashmiri dinner and breakfast.'
+      },
+      {
+        id: 'srv-402',
+        dayNumber: 3,
+        type: 'Hotel',
+        supplier: 'The Grand Gulmarg',
+        title: 'Grand Gulmarg Resort - Twin Rooms',
+        location: 'Gulmarg',
+        starCategory: '4 Star',
+        roomType: 'Double',
+        mealPlan: 'CP',
+        nights: 2,
+        rooms: { Double: { count: 2, costPerNight: 6000, total: 24000 } },
+        totalCost: 24000,
+        description: 'Heated rooms with views of Afarwat peak.'
+      },
+      {
+        id: 'srv-403',
+        dayNumber: 1,
+        type: 'Cruise',
+        title: 'Private Shikara Ride on Dal Lake',
+        fromPort: 'Ghat 14',
+        toPort: 'Floating Gardens',
+        day: 'Day 1',
+        returnDay: 'Day 1',
+        cabinShip: 'Traditional Shikara boat',
+        adultCost: 1500.00,
+        totalCost: 6000.00,
+        description: '2-hour sunset cruise.'
+      }
+    ]
+  },
+  {
+    id: 'ITIN-2026-0005',
+    name: 'LUXURY KASHMIR',
+    customerName: 'Kabir Oberoi',
+    phone: '+91 98888 77777',
+    destination: 'Srinagar, Gulmarg, Pahalgam',
+    coverImage: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80',
+    startDate: '2026-10-01',
+    endDate: '2026-10-06',
+    durationDays: 6,
+    durationNights: 5,
+    travelers: 2,
+    adults: 2,
+    children: 0,
+    infants: 0,
+    type: 'Honeymoon',
+    amount: 75000.00,
+    description: 'An absolute luxury honeymoon package featuring stays at Khyber Resort Gulmarg, Taj Vivanta Srinagar, and private heli-charter options.',
+    status: 'Quoted',
+    createdAt: '2026-07-29T10:15:00.000Z',
+    days: [
+      { dayNumber: 1, title: 'Srinagar', description: 'Airport pick-up and Vivanta Taj check-in', image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80' },
+      { dayNumber: 2, title: 'Srinagar', description: 'Private Shikara boat and Shankaracharya tour', image: 'https://images.unsplash.com/photo-1566837945700-30057527ade0?auto=format&fit=crop&w=600&q=80' },
+      { dayNumber: 3, title: 'Gulmarg', description: 'Drive to Gulmarg, stay at The Khyber', image: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=600&q=80' },
+      { dayNumber: 4, title: 'Gulmarg', description: 'Gondola Stage 2 and golf course walking', image: 'https://images.unsplash.com/photo-1544644181-1484b3fdfc62?auto=format&fit=crop&w=600&q=80' },
+      { dayNumber: 5, title: 'Pahalgam', description: 'Transfer to Pahalgam and riverside walk', image: 'https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=600&q=80' },
+      { dayNumber: 6, title: 'Srinagar', description: 'Transfer back and return flight', image: 'https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?auto=format&fit=crop&w=600&q=80' }
+    ],
+    services: [
+      {
+        id: 'srv-501',
+        dayNumber: 3,
+        type: 'Hotel',
+        supplier: 'The Khyber Resort Gulmarg',
+        title: 'The Khyber Himalayan Resort - Luxury Room',
+        location: 'Gulmarg',
+        starCategory: 'Luxury',
+        roomType: 'Suite',
+        mealPlan: 'MAP',
+        nights: 2,
+        rooms: { Double: { count: 1, costPerNight: 25000, total: 50000 } },
+        totalCost: 50000,
+        description: 'World class wellness spa resort in Gulmarg.'
+      },
+      {
+        id: 'srv-502',
+        dayNumber: 1,
+        type: 'Hotel',
+        supplier: 'Taj Vivanta Srinagar',
+        title: 'Vivanta Dal View Srinagar - Deluxe Room',
+        location: 'Srinagar',
+        starCategory: 'Luxury',
+        roomType: 'Double',
+        mealPlan: 'CP',
+        nights: 2,
+        rooms: { Double: { count: 1, costPerNight: 12500, total: 25000 } },
+        totalCost: 25000,
+        description: 'Stunning panoramic views of Dal lake from the hilltop.'
+      }
+    ]
+  },
+  {
+    id: 'ITIN-2026-0006',
+    name: 'Manali Getaway',
+    customerName: 'Neha Kapoor',
+    phone: '+91 99988 88899',
+    destination: 'Manali',
+    coverImage: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=800&q=80',
+    startDate: '2026-08-10',
+    endDate: '2026-08-14',
+    durationDays: 4,
+    durationNights: 3,
+    travelers: 2,
+    adults: 2,
+    children: 0,
+    infants: 0,
+    type: 'Honeymoon',
+    amount: 18500.00,
+    description: 'Perfect budget-friendly weekend getaway to Himachal Pradesh hills.',
+    status: 'Draft',
+    createdAt: '2026-07-30T11:00:00.000Z',
+    days: [
+      { dayNumber: 1, title: 'Manali', description: 'Arrival and local exploring', image: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=600&q=80' },
+      { dayNumber: 2, title: 'Manali', description: 'Hadimba Temple and Club House', image: 'https://images.unsplash.com/photo-1544644181-1484b3fdfc62?auto=format&fit=crop&w=600&q=80' },
+      { dayNumber: 3, title: 'Manali', description: 'Solang Valley sightseeing', image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80' },
+      { dayNumber: 4, title: 'Manali', description: 'Shopping and departure', image: 'https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?auto=format&fit=crop&w=600&q=80' }
+    ],
+    services: [
+      {
+        id: 'srv-601',
+        dayNumber: 1,
+        type: 'Hotel',
+        supplier: 'Snow Valley Resorts',
+        title: 'Snow Valley Resort - Standard Double',
+        location: 'Manali',
+        starCategory: '3 Star',
+        roomType: 'Double',
+        mealPlan: 'CP',
+        nights: 3,
+        rooms: { Double: { count: 1, costPerNight: 3500, total: 10500 } },
+        totalCost: 10500,
+        description: 'Comfortable family budget rooms.'
+      },
+      {
+        id: 'srv-602',
+        dayNumber: 1,
+        type: 'Transport',
+        title: 'Private Sedan Airport Pick-up & Tour',
+        vehicleType: 'Sedan',
+        days: 4,
+        dailyRate: 2000,
+        totalCost: 8000,
+        description: 'Toyota Etios at disposal for local sightseeing.'
+      }
+    ]
+  },
+  {
+    id: 'ITIN-2026-0007',
+    name: 'Luxury Kashmir Package',
+    customerName: 'Priya Patel',
+    phone: '+91 97766 55443',
+    destination: 'kashmir',
+    coverImage: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=800&q=80',
+    startDate: '2026-09-01',
+    endDate: '2026-09-08',
+    durationDays: 7,
+    durationNights: 6,
+    travelers: 2,
+    adults: 2,
+    children: 0,
+    infants: 0,
+    type: 'Honeymoon',
+    amount: 65000.00,
+    description: 'An elegant premium holiday across Srinagar, Gulmarg, and Betaab Valley.',
+    status: 'Draft',
+    createdAt: '2026-07-29T15:00:00.000Z',
+    days: [
+      { dayNumber: 1, title: 'kashmir', description: 'Arrival and luxury stay', image: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=600&q=80' },
+      { dayNumber: 2, title: 'kashmir', description: 'Private boat tour & Srinagar parks', image: 'https://images.unsplash.com/photo-1566837945700-30057527ade0?auto=format&fit=crop&w=600&q=80' },
+      { dayNumber: 3, title: 'kashmir', description: 'Gulmarg Gondola tour', image: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=600&q=80' },
+      { dayNumber: 4, title: 'kashmir', description: 'Excursion and golf walk', image: 'https://images.unsplash.com/photo-1544644181-1484b3fdfc62?auto=format&fit=crop&w=600&q=80' },
+      { dayNumber: 5, title: 'kashmir', description: 'Transfer to Pahalgam', image: 'https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=600&q=80' },
+      { dayNumber: 6, title: 'kashmir', description: 'Aru and Betaab sightseeing', image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80' },
+      { dayNumber: 7, title: 'kashmir', description: 'Departure', image: 'https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?auto=format&fit=crop&w=600&q=80' }
+    ],
+    services: [
+      {
+        id: 'srv-701',
+        dayNumber: 1,
+        type: 'Hotel',
+        supplier: 'Premium Hotel Group',
+        title: 'Premium Mountain Chalet stay - Kashmir',
+        location: 'Kashmir',
+        starCategory: '5 Star',
+        roomType: 'Suite',
+        mealPlan: 'MAP',
+        nights: 6,
+        rooms: { Double: { count: 1, costPerNight: 9000, total: 54000 } },
+        totalCost: 54000,
+        description: 'Super deluxe cottage room with snow peak views.'
+      },
+      {
+        id: 'srv-702',
+        dayNumber: 3,
+        type: 'Sightseeing',
+        title: 'Gulmarg Gondola Ride Level 1 & 2 tickets',
+        location: 'Gulmarg',
+        adultCost: 5500,
+        totalCost: 11000,
+        description: 'Skip the line tickets for Gondola phase 1 and 2.'
+      }
+    ]
+  },
+  {
+    id: 'ITIN-2026-0008',
+    name: '03 NIGHT 04 DAYS MANALI',
+    customerName: 'Rahul Verma',
+    phone: '+91 98888 11122',
+    destination: 'Manali',
+    coverImage: 'https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?auto=format&fit=crop&w=800&q=80',
+    startDate: '2026-08-20',
+    endDate: '2026-08-24',
+    durationDays: 4,
+    durationNights: 3,
+    travelers: 2,
+    adults: 2,
+    children: 0,
+    infants: 0,
+    type: 'Friends',
+    amount: 15000.00,
+    description: 'Short sweet Manali adventure including Solang Valley and Mall Road shopping.',
+    status: 'Quoted',
+    createdAt: '2026-07-30T12:00:00.000Z',
+    days: [
+      { dayNumber: 1, title: 'Manali', description: 'Arrival and check-in to Riverside Cottages', image: 'https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?auto=format&fit=crop&w=600&q=80' },
+      { dayNumber: 2, title: 'Manali', description: 'Excursion to Solang Valley', image: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=600&q=80' },
+      { dayNumber: 3, title: 'Manali', description: 'Old Manali and market walking', image: 'https://images.unsplash.com/photo-1544644181-1484b3fdfc62?auto=format&fit=crop&w=600&q=80' },
+      { dayNumber: 4, title: 'Manali', description: 'Departure', image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80' }
+    ],
+    services: [
+      {
+        id: 'srv-801',
+        dayNumber: 1,
+        type: 'Hotel',
+        supplier: 'Manali View Hotel',
+        title: 'Manali View Cottages - Double Bed',
+        location: 'Manali',
+        starCategory: '3 Star',
+        roomType: 'Double',
+        mealPlan: 'CP',
+        nights: 3,
+        rooms: { Double: { count: 1, costPerNight: 3000, total: 9000 } },
+        totalCost: 9000,
+        description: 'Standard breakfast buffet included.'
+      },
+      {
+        id: 'srv-802',
+        dayNumber: 2,
+        type: 'Transport',
+        title: 'Private Hatchback Rental',
+        vehicleType: 'Sedan',
+        days: 3,
+        dailyRate: 2000,
+        totalCost: 6000,
+        description: 'Hatchback cab with local driver for transfer and tour.'
+      }
+    ]
+  }
+];
