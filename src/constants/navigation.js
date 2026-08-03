@@ -16,6 +16,11 @@ import {
   MdOutlinePeopleAlt,
   MdOutlineAutoMode,
   MdOutlineSettings,
+  MdOutlineEditNote,
+  MdOutlineLanguage,
+  MdOutlineChat,
+  MdOutlineCampaign,
+  MdOutlineRepeat,
 } from 'react-icons/md';
 import { ROUTES } from '@constants/routes';
 
@@ -26,7 +31,20 @@ import { ROUTES } from '@constants/routes';
  */
 export const NAV_ITEMS = [
   { label: 'Dashboard', path: ROUTES.DASHBOARD, icon: MdSpaceDashboard },
-  { label: 'Inquiry Engine', path: ROUTES.INQUIRY, icon: MdOutlineForum },
+  {
+    label: 'Inquiry Engine',
+    path: ROUTES.INQUIRY,
+    icon: MdOutlineForum,
+    children: [
+      { label: 'Dashboard', path: ROUTES.INQUIRY_DASHBOARD, icon: MdOutlineDashboard },
+      { label: 'Manual', path: ROUTES.INQUIRY_MANUAL, icon: MdOutlineEditNote },
+      { label: 'Website', path: ROUTES.INQUIRY_WEBSITE, icon: MdOutlineLanguage },
+      { label: 'whatsapp', path: ROUTES.INQUIRY_WHATSAPP, icon: MdOutlineChat },
+      { label: 'Instagram / Meta Ads', path: ROUTES.INQUIRY_INSTAGRAM, icon: MdOutlineCampaign },
+      { label: 'B2B Partners', path: ROUTES.INQUIRY_B2B, icon: MdOutlineHandshake },
+      { label: 'Repeat Customers', path: ROUTES.INQUIRY_REPEAT, icon: MdOutlineRepeat },
+    ],
+  },
   {
     label: 'Sales',
     path: ROUTES.SALES,
