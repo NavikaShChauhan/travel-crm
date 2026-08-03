@@ -6,6 +6,7 @@ import FollowUpPage from './pages/FollowUpPage';
 import NegotiationPage from './pages/NegotiationPage';
 import ConfirmationPage from './pages/ConfirmationPage';
 import AnalyticsPage from './pages/AnalyticsPage';
+import SalesExperience from './components/SalesExperience';
 
 /**
  * Route registry for the "sales" module. Aggregated by
@@ -13,11 +14,11 @@ import AnalyticsPage from './pages/AnalyticsPage';
  * not in the central router.
  */
 export const salesRoutes = [
-  { path: ROUTES.SALES, element: <SalesPage /> },
-  { path: `${ROUTES.SALES}/dashboard`, element: <SalesDashboard /> },
-  { path: `${ROUTES.SALES}/proposal`, element: <ProposalPage /> },
-  { path: `${ROUTES.SALES}/follow-up`, element: <FollowUpPage /> },
-  { path: `${ROUTES.SALES}/negotiation`, element: <NegotiationPage /> },
-  { path: `${ROUTES.SALES}/confirmation`, element: <ConfirmationPage /> },
-  { path: `${ROUTES.SALES}/analytics`, element: <AnalyticsPage /> },
+  { path: ROUTES.SALES, element: <SalesExperience><SalesPage /></SalesExperience> },
+  { path: `${ROUTES.SALES}/dashboard`, element: <SalesExperience><SalesDashboard /></SalesExperience> },
+  { path: `${ROUTES.SALES}/proposal`, element: <SalesExperience><ProposalPage /></SalesExperience> },
+  { path: `${ROUTES.SALES}/follow-up`, element: <SalesExperience><FollowUpPage /></SalesExperience> },
+  { path: `${ROUTES.SALES}/negotiation`, element: <SalesExperience><NegotiationPage /></SalesExperience> },
+  { path: `${ROUTES.SALES}/confirmation`, element: <SalesExperience><ConfirmationPage /></SalesExperience> },
+  { path: `${ROUTES.SALES}/analytics`, element: <SalesExperience><AnalyticsPage /></SalesExperience> },
 ];

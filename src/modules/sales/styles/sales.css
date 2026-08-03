@@ -59,3 +59,71 @@
 .sales-pulse-dot {
   animation: sales-pulse 1.8s ease-in-out infinite;
 }
+
+/* Shared interaction polish for every Sales workspace. */
+.sales-workspace .MuiCard-root {
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+
+.sales-workspace .MuiCard-root:hover {
+  border-color: rgba(49, 68, 110, 0.22);
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.08);
+}
+
+.sales-workspace .MuiButton-root {
+  transition: background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+.sales-workspace .MuiButton-root:hover:not(.Mui-disabled) {
+  transform: translateY(-1px);
+}
+
+.sales-workspace .MuiButton-root:focus-visible,
+.sales-workspace .MuiChip-clickable:focus-visible,
+.sales-workspace [role='button']:focus-visible {
+  outline: 3px solid rgba(49, 68, 110, 0.28);
+  outline-offset: 2px;
+}
+
+.sales-interactive {
+  cursor: pointer;
+  transition: background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+.sales-interactive:hover {
+  border-color: #31446e !important;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.1);
+  transform: translateY(-1px);
+}
+
+.sales-scroll-area {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+.sales-scroll-area::-webkit-scrollbar {
+  height: 6px;
+  width: 6px;
+}
+
+.sales-scroll-area::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+
+.sales-scroll-area::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sales-workspace *,
+  .sales-workspace *::before,
+  .sales-workspace *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
