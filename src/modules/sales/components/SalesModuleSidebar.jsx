@@ -2,7 +2,6 @@ import { Box, List, ListItemButton, ListItemIcon, ListItemText, Typography } fro
 import { NavLink, useLocation } from 'react-router-dom';
 import {
   MdOutlineDashboard,
-  MdOutlineGroup,
   MdOutlineDescription,
   MdOutlineSchedule,
   MdOutlineHandshake,
@@ -13,7 +12,6 @@ import { tokens } from '@styles/theme';
 
 const NAV_ITEMS = [
   { label: 'Sales Dashboard', path: '/sales/dashboard', icon: MdOutlineDashboard },
-  { label: 'Leads', path: '/sales/leads', icon: MdOutlineGroup },
   { label: 'Proposal', path: '/sales/proposal', icon: MdOutlineDescription },
   { label: 'Follow Up', path: '/sales/follow-up', icon: MdOutlineSchedule },
   { label: 'Negotiation', path: '/sales/negotiation', icon: MdOutlineHandshake },
