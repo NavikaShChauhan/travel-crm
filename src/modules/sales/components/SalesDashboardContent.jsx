@@ -22,6 +22,8 @@ function SalesDashboardContent() {
     recentActivities,
     upcomingFollowUps,
     leads,
+    updateLead,
+    deleteLead,
   } = useSalesDashboard();
 
   const leadColumns = [
@@ -168,7 +170,19 @@ function SalesDashboardContent() {
           )}
         </Grid>
       </Grid>
-      <LeadSummaryDrawer lead={selectedLead} open={Boolean(selectedLead)} onClose={() => setSelectedLead(null)} />
+      <LeadSummaryDrawer
+        lead={selectedLead}
+        open={Boolean(selectedLead)}
+        onClose={() => setSelectedLead(null)}
+        onUpdateLead={async (updated) => {
+          await updateLead(updated.id, updated);
+          setSelectedLead(updated);
+        }}
+        onDeleteLead={async (id) => {
+          await deleteLead(id);
+          setSelectedLead(null);
+        }}
+      />
     </SalesSectionPage>
   );
 }
