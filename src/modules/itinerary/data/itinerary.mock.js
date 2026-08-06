@@ -89,7 +89,7 @@ export const MOCK_ITINERARY = [
       {
         id: 'srv-104',
         dayNumber: 3,
-        type: 'Sightseeing',
+        type: 'Adventurous Activity',
         title: 'Solang Valley Adventure Passes',
         location: 'Manali',
         adultCost: 2630.62,
@@ -427,7 +427,7 @@ export const MOCK_ITINERARY = [
       {
         id: 'srv-702',
         dayNumber: 3,
-        type: 'Sightseeing',
+        type: 'Adventurous Activity',
         title: 'Gulmarg Gondola Ride Level 1 & 2 tickets',
         location: 'Gulmarg',
         adultCost: 5500,

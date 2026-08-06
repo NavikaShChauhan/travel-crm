@@ -18,13 +18,14 @@ const getStoredItineraries = () => {
   }
   try {
     const parsed = JSON.parse(stored);
-    // If the stored data is the old 3-item list, reset it to the new 8-item dataset
-    if (parsed.length === 3 && parsed[0].id === 'ITIN-2026-0001' && parsed[0].name.includes('Maldives')) {
+    // Reset only if data is invalid (not an array or empty)
+    if (!Array.isArray(parsed) || parsed.length === 0) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(MOCK_ITINERARY));
       return MOCK_ITINERARY;
     }
     return parsed;
   } catch (e) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(MOCK_ITINERARY));
     return MOCK_ITINERARY;
   }
 };
@@ -65,7 +66,26 @@ export const getById = async (id) => {
   await new Promise((resolve) => setTimeout(resolve, 150));
   const list = getStoredItineraries();
   const found = list.find((item) => item.id === id);
-  if (!found) throw new Error(`Itinerary ${id} not found`);
+
+  if (!found) {
+    // Try to find in mock data as absolute fallback
+    const mockFallback = MOCK_ITINERARY.find((item) => item.id === id);
+    return mockFallback || null;
+  }
+
+  // Only augment with mock data if this ID exists in MOCK_ITINERARY
+  // (to avoid polluting user-created itineraries with mock days/services)
+  const mockEntry = MOCK_ITINERARY.find((item) => item.id === id);
+  if (mockEntry) {
+    return {
+      ...mockEntry,
+      ...found,
+      days: (found.days && found.days.length > 0) ? found.days : mockEntry.days,
+      services: (found.services && found.services.length > 0) ? found.services : mockEntry.services,
+      termsAndPolicies: (found.termsAndPolicies && found.termsAndPolicies.length > 0) ? found.termsAndPolicies : mockEntry.termsAndPolicies
+    };
+  }
+
   return found;
 };
 
