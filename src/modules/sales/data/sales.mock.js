@@ -346,6 +346,83 @@ export const MOCK_LEAD_SOURCES = [
   { id: 'other', label: 'Other', count: 4, percentage: 1.4 },
 ];
 
+// ─── Leads Dashboard Table Mock Data ────────────────────────────────────────
+
+export const MOCK_LEADS = [
+  {
+    id: 'LD-1001',
+    name: 'Rohan & Anjali Mehta',
+    contactEmail: 'rohan.mehta@example.com',
+    contactPhone: '+91 98765 43210',
+    source: 'Referral',
+    registrationDate: '2026-07-28T10:30:00+05:30',
+    status: 'new',
+    temperature: 'Hot',
+    salesExecutive: 'Priya Sharma',
+    lastUpdated: '2026-07-30T09:15:00+05:30',
+  },
+  {
+    id: 'LD-1002',
+    name: 'Siddharth Verma',
+    contactEmail: 'siddharth.verma@example.com',
+    contactPhone: '+91 98111 48333',
+    source: 'Online Search',
+    registrationDate: '2026-07-26T11:45:00+05:30',
+    status: 'in_progress',
+    temperature: 'Warm',
+    salesExecutive: 'Arjun Nair',
+    lastUpdated: '2026-07-30T08:40:00+05:30',
+  },
+  {
+    id: 'LD-1003',
+    name: 'The Khanna Family',
+    contactEmail: 'khanna.family@example.com',
+    contactPhone: '+91 98200 11451',
+    source: 'Social Media',
+    registrationDate: '2026-07-24T14:20:00+05:30',
+    status: 'confirmed',
+    temperature: 'Hot',
+    salesExecutive: 'Meera Pillai',
+    lastUpdated: '2026-07-29T17:20:00+05:30',
+  },
+  {
+    id: 'LD-1004',
+    name: 'Deepika Reddy',
+    contactEmail: 'deepika.reddy@example.com',
+    contactPhone: '+91 97654 11009',
+    source: 'Walk-In',
+    registrationDate: '2026-07-23T16:05:00+05:30',
+    status: 'pending',
+    temperature: 'Cold',
+    salesExecutive: 'Karan Malhotra',
+    lastUpdated: '2026-07-29T14:05:00+05:30',
+  },
+  {
+    id: 'LD-1005',
+    name: 'Vikram & Nisha Patel',
+    contactEmail: 'vikram.patel@example.com',
+    contactPhone: '+91 99333 88122',
+    source: 'Referral',
+    registrationDate: '2026-07-22T09:10:00+05:30',
+    status: 'in_progress',
+    temperature: 'Warm',
+    salesExecutive: 'Priya Sharma',
+    lastUpdated: '2026-07-29T11:30:00+05:30',
+  },
+  {
+    id: 'LD-1006',
+    name: 'Adventure Club Mumbai',
+    contactEmail: 'adventure.club@example.com',
+    contactPhone: '+91 98888 32154',
+    source: 'Corporate',
+    registrationDate: '2026-07-21T12:15:00+05:30',
+    status: 'cancelled',
+    temperature: 'Cold',
+    salesExecutive: 'Arjun Nair',
+    lastUpdated: '2026-07-28T16:45:00+05:30',
+  },
+];
+
 // ─── Monthly Revenue Summary ─────────────────────────────────────────────────
 
 export const MOCK_MONTHLY_REVENUE = [

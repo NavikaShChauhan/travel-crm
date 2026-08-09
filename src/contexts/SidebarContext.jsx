@@ -1,12 +1,5 @@
 import { createContext, useContext, useMemo, useState, useCallback, useEffect } from 'react';
 
-/**
- * SidebarContext
- * -----------------------------------------------------------------------
- * Pure UI state — desktop collapse and mobile drawer open/close.
- * Kept separate from AuthContext/NotificationContext so layout re-renders
- * never cascade into unrelated parts of the app.
- */
 const SidebarContext = createContext(undefined);
 
 export function SidebarProvider({ children }) {
@@ -22,12 +15,14 @@ export function SidebarProvider({ children }) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   const toggleCollapsed = useCallback(() => setIsCollapsed((prev) => !prev), []);
+  const expandSidebar = useCallback(() => setIsCollapsed(false), []);
+  const collapseSidebar = useCallback(() => setIsCollapsed(true), []);
   const openMobile = useCallback(() => setIsMobileOpen(true), []);
   const closeMobile = useCallback(() => setIsMobileOpen(false), []);
 
   const value = useMemo(
-    () => ({ isCollapsed, toggleCollapsed, isMobileOpen, openMobile, closeMobile }),
-    [isCollapsed, toggleCollapsed, isMobileOpen, openMobile, closeMobile]
+    () => ({ isCollapsed, toggleCollapsed, expandSidebar, collapseSidebar, isMobileOpen, openMobile, closeMobile }),
+    [isCollapsed, toggleCollapsed, expandSidebar, collapseSidebar, isMobileOpen, openMobile, closeMobile]
   );
 
   // Persist collapsed state

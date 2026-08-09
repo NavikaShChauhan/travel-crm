@@ -127,7 +127,15 @@ function FollowUpRow({ followUp }) {
  */
 function FollowUpList({ followUps }) {
   return (
-    <Card sx={{ p: 3, height: '100%' }}>
+    <Card
+      sx={{
+        p: 3,
+        height: 420,
+        borderRadius: 2,
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
       <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 0.5 }}>
         Upcoming Follow Ups
       </Typography>
@@ -135,11 +143,22 @@ function FollowUpList({ followUps }) {
         {followUps.length} scheduled · sorted by due date
       </Typography>
 
-      <Stack spacing={1.5}>
-        {followUps.map((fu) => (
-          <FollowUpRow key={fu.id} followUp={fu} />
-        ))}
-      </Stack>
+      <Box
+        sx={{
+          flex: 1,
+          minHeight: 0,
+          overflowY: 'auto',
+          pr: 0.5,
+          scrollbarWidth: 'none',
+          '&::-webkit-scrollbar': { display: 'none' },
+        }}
+      >
+        <Stack spacing={1.5}>
+          {followUps.map((fu) => (
+            <FollowUpRow key={fu.id} followUp={fu} />
+          ))}
+        </Stack>
+      </Box>
     </Card>
   );
 }

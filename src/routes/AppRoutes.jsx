@@ -46,23 +46,27 @@ const MODULE_ROUTES = [
   ...settingsRoutes,
 ];
 
+import { InquiryProvider } from '@modules/inquiry/contexts/InquiryContext';
+
 function AppRoutes() {
   return (
-    <Routes>
-      <Route
-        element={
-          <ProtectedRoute>
-            <MainLayout />
-          </ProtectedRoute>
-        }
-      >
-        <Route index element={<Navigate to={ROUTES.DASHBOARD} replace />} />
-        {MODULE_ROUTES.map(({ path, element }) => (
-          <Route key={path} path={path} element={element} />
-        ))}
-        <Route path="*" element={<NotFoundPage />} />
-      </Route>
-    </Routes>
+    <InquiryProvider>
+      <Routes>
+        <Route
+          element={
+            <ProtectedRoute>
+              <MainLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Navigate to={ROUTES.DASHBOARD} replace />} />
+          {MODULE_ROUTES.map(({ path, element }) => (
+            <Route key={path} path={path} element={element} />
+          ))}
+          <Route path="*" element={<NotFoundPage />} />
+        </Route>
+      </Routes>
+    </InquiryProvider>
   );
 }
 

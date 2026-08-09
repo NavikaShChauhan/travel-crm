@@ -24,6 +24,7 @@ function PipelineStageCard({ stage }) {
 
   return (
     <Box
+      className="sales-scroll-area"
       sx={{
         flex: '1 1 160px',
         minWidth: 160,

@@ -18,27 +18,29 @@ function KpiCard({ id, label, value, accentKey = 'navy' }) {
   return (
     <Card
       sx={{
-        p: 2.5,
-        height: '100%',
-        minHeight: 150,
+        p: 1.75,
+        height: 124,
+        width: '100%',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         textAlign: 'center',
+        borderRadius: 3,
         border: '1px solid',
         borderColor: 'divider',
+        boxShadow: '0 4px 16px rgba(15, 23, 42, 0.06)',
         transition: 'box-shadow 0.2s ease, transform 0.2s ease',
         '&:hover': {
-          boxShadow: '0 4px 20px rgba(11,21,38,0.10)',
+          boxShadow: '0 8px 24px rgba(11,21,38,0.10)',
           transform: 'translateY(-2px)',
         },
       }}
     >
-      <Stack spacing={1.25} alignItems="center">
+      <Stack spacing={0.75} alignItems="center" sx={{ width: '100%' }}>
         <Box
           sx={{
-            width: 46,
-            height: 46,
+            width: 38,
+            height: 38,
             borderRadius: 2,
             display: 'flex',
             alignItems: 'center',
@@ -47,12 +49,12 @@ function KpiCard({ id, label, value, accentKey = 'navy' }) {
             color: accent.icon,
           }}
         >
-          {Icon ? <Icon size={22} /> : null}
+          {Icon ? <Icon size={18} /> : null}
         </Box>
-        <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>
+        <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600, lineHeight: 1.2 }}>
           {label}
         </Typography>
-        <Typography variant="h4" sx={{ fontWeight: 700, fontSize: { xs: 24, sm: 28 } }}>
+        <Typography variant="h5" sx={{ fontWeight: 700, fontSize: 20, lineHeight: 1.2 }}>
           {value}
         </Typography>
       </Stack>
