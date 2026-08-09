@@ -5,7 +5,6 @@ import {
   Button,
   Grid,
   Card,
-  CardContent,
   Stack,
   LinearProgress,
 } from '@mui/material';
@@ -16,9 +15,6 @@ import {
   XAxis,
   YAxis,
   Tooltip as RechartsTooltip,
-  PieChart,
-  Pie,
-  Cell,
 } from 'recharts';
 import {
   MdAdd,
@@ -53,8 +49,8 @@ const SOURCES = [
 ];
 
 const PRIORITY_COLORS = {
-  Hot: '#EF4444',
-  Warm: '#F59E0B',
+  Hot: '#EC4899',
+  Warm: '#8B5CF6',
   Cold: '#3B82F6',
 };
 
@@ -63,18 +59,19 @@ export default function InquiryDashboardPage() {
 
   // Calculate metrics
   const totalEnquiries = leads.length;
-  const hotLeadsCount = leads.filter((l) => l.priority === 'Hot').length;
-  const warmLeadsCount = leads.filter((l) => l.priority === 'Warm').length;
-  const coldLeadsCount = leads.filter((l) => l.priority === 'Cold').length;
+  const hotLeadsCount = leads.filter((l) => (l.priority || l.temperature) === 'Hot').length;
+  const warmLeadsCount = leads.filter((l) => (l.priority || l.temperature) === 'Warm').length;
+  const coldLeadsCount = leads.filter((l) => (l.priority || l.temperature) === 'Cold').length;
 
-  const avgGroupSize = totalEnquiries > 0
-    ? (leads.reduce((acc, l) => acc + (Number(l.pax) || 0), 0) / totalEnquiries).toFixed(1)
-    : '0.0';
+  const avgGroupSize =
+    totalEnquiries > 0
+      ? (leads.reduce((acc, l) => acc + (Number(l.pax || l.totalPax) || 0), 0) / totalEnquiries).toFixed(1)
+      : '0.0';
 
   // Funnel Data
   const funnelData = useMemo(() => {
     return STAGES.map((stage) => {
-      const count = leads.filter((l) => l.stage === stage).length;
+      const count = leads.filter((l) => (l.stage || l.status) === stage).length;
       return { stage, count };
     });
   }, [leads]);
@@ -87,57 +84,40 @@ export default function InquiryDashboardPage() {
     });
   }, [leads]);
 
-  // Priority Split Data
-  const priorityData = useMemo(() => {
-    return [
-      { name: 'Hot', value: hotLeadsCount, color: PRIORITY_COLORS.Hot },
-      { name: 'Warm', value: warmLeadsCount, color: PRIORITY_COLORS.Warm },
-      { name: 'Cold', value: coldLeadsCount, color: PRIORITY_COLORS.Cold },
-    ].filter((item) => item.value > 0);
-  }, [hotLeadsCount, warmLeadsCount, coldLeadsCount]);
-
-  // Daily Trend Mock
-  const trendData = [
-    { date: '01 May', count: 1 },
-    { date: '02 May', count: 1 },
-    { date: '03 May', count: 1 },
-    { date: '04 May', count: 0 },
-  ];
-
   return (
-    <Box sx={{ p: { xs: 2, md: 3 }, bgcolor: '#F8FAFC', minHeight: '100vh' }}>
+    <Box>
       <AddLeadModal />
 
       {/* Header Banner */}
       <Card
         elevation={0}
         sx={{
-          p: 2.5,
+          p: 3,
           mb: 3,
-          borderRadius: '16px',
+          borderRadius: '20px',
           bgcolor: '#FFFFFF',
-          border: '1px solid #E2E8F0',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+          border: '1px solid #F1F5F9',
+          boxShadow: '0 4px 20px rgba(99, 102, 241, 0.04)',
         }}
       >
         <Stack direction={{ xs: 'column', sm: 'row' }} alignItems="center" justifyContent="space-between" spacing={2}>
           <Stack direction="row" alignItems="center" spacing={2}>
             <Box
               sx={{
-                width: 48,
-                height: 48,
-                borderRadius: '12px',
-                bgcolor: '#F1F5F9',
+                width: 52,
+                height: 52,
+                borderRadius: '16px',
+                background: 'linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 100%)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#475569',
+                color: '#6366F1',
               }}
             >
-              <MdOutlineExplore size={28} />
+              <MdOutlineExplore size={30} />
             </Box>
             <Box>
-              <Typography variant="h5" sx={{ fontWeight: 800, color: '#0F172A', fontSize: 22 }}>
+              <Typography variant="h5" sx={{ fontWeight: 800, color: '#0F172A', fontSize: 22, letterSpacing: '-0.01em' }}>
                 Inquiry Engine Dashboard
               </Typography>
               <Typography variant="body2" sx={{ color: '#64748B', fontSize: 13, mt: 0.25 }}>
@@ -145,23 +125,25 @@ export default function InquiryDashboardPage() {
               </Typography>
             </Box>
           </Stack>
+
           <Button
             variant="contained"
             disableElevation
-            startIcon={<MdAdd size={18} />}
+            startIcon={<MdAdd size={20} />}
             onClick={openAddModal}
             sx={{
-              bgcolor: '#3B82F6',
-              '&:hover': { bgcolor: '#2563EB' },
-              borderRadius: '8px',
-              px: 2.5,
-              py: 1,
-              fontWeight: 600,
+              background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)',
+              '&:hover': { background: 'linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)' },
+              borderRadius: '12px',
+              px: 3,
+              py: 1.25,
+              fontWeight: 700,
               textTransform: 'none',
               fontSize: 14,
+              boxShadow: '0 6px 18px rgba(139, 92, 246, 0.3)',
             }}
           >
-            Add Lead
+            + Add Lead
           </Button>
         </Stack>
       </Card>
@@ -170,21 +152,21 @@ export default function InquiryDashboardPage() {
       <Grid container spacing={2.5} sx={{ mb: 3 }}>
         {/* Total Enquiries */}
         <Grid item xs={12} sm={6} md={3}>
-          <Card elevation={0} sx={{ p: 2.5, borderRadius: '14px', border: '1px solid #E2E8F0', bgcolor: '#FFFFFF' }}>
+          <Card elevation={0} sx={{ p: 2.5, borderRadius: '20px', border: '1px solid #F1F5F9', bgcolor: '#FFFFFF', boxShadow: '0 4px 20px rgba(99, 102, 241, 0.04)' }}>
             <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
               <Box>
-                <Typography variant="caption" sx={{ fontWeight: 700, color: '#64748B', letterSpacing: 0.5 }}>
+                <Typography variant="caption" sx={{ fontWeight: 700, color: '#64748B', letterSpacing: '0.05em', textTransform: 'uppercase', fontSize: 11 }}>
                   TOTAL ENQUIRIES
                 </Typography>
-                <Typography variant="h4" sx={{ fontWeight: 800, color: '#0F172A', my: 0.5 }}>
+                <Typography variant="h4" sx={{ fontWeight: 800, color: '#0F172A', my: 0.5, fontSize: 32 }}>
                   {totalEnquiries}
                 </Typography>
-                <Typography variant="caption" sx={{ color: '#64748B' }}>
+                <Typography variant="caption" sx={{ color: '#64748B', fontSize: 12 }}>
                   {totalEnquiries} active in pipeline
                 </Typography>
               </Box>
-              <Box sx={{ p: 1.25, borderRadius: '10px', bgcolor: '#EFF6FF', color: '#3B82F6' }}>
-                <MdOutlineGroup size={22} />
+              <Box sx={{ p: 1.5, borderRadius: '14px', bgcolor: '#F3E8FF', color: '#8B5CF6' }}>
+                <MdOutlineGroup size={24} />
               </Box>
             </Stack>
           </Card>
@@ -192,21 +174,21 @@ export default function InquiryDashboardPage() {
 
         {/* Hot Leads */}
         <Grid item xs={12} sm={6} md={3}>
-          <Card elevation={0} sx={{ p: 2.5, borderRadius: '14px', border: '1px solid #E2E8F0', bgcolor: '#FFFFFF' }}>
+          <Card elevation={0} sx={{ p: 2.5, borderRadius: '20px', border: '1px solid #F1F5F9', bgcolor: '#FFFFFF', boxShadow: '0 4px 20px rgba(99, 102, 241, 0.04)' }}>
             <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
               <Box>
-                <Typography variant="caption" sx={{ fontWeight: 700, color: '#64748B', letterSpacing: 0.5 }}>
+                <Typography variant="caption" sx={{ fontWeight: 700, color: '#64748B', letterSpacing: '0.05em', textTransform: 'uppercase', fontSize: 11 }}>
                   HOT LEADS
                 </Typography>
-                <Typography variant="h4" sx={{ fontWeight: 800, color: '#0F172A', my: 0.5 }}>
+                <Typography variant="h4" sx={{ fontWeight: 800, color: '#0F172A', my: 0.5, fontSize: 32 }}>
                   {hotLeadsCount}
                 </Typography>
-                <Typography variant="caption" sx={{ color: '#64748B' }}>
+                <Typography variant="caption" sx={{ color: '#64748B', fontSize: 12 }}>
                   {hotLeadsCount} follow-up due today
                 </Typography>
               </Box>
-              <Box sx={{ p: 1.25, borderRadius: '10px', bgcolor: '#FEF2F2', color: '#EF4444' }}>
-                <MdOutlineWhatshot size={22} />
+              <Box sx={{ p: 1.5, borderRadius: '14px', bgcolor: '#FCE7F3', color: '#EC4899' }}>
+                <MdOutlineWhatshot size={24} />
               </Box>
             </Stack>
           </Card>
@@ -214,21 +196,21 @@ export default function InquiryDashboardPage() {
 
         {/* Conversion */}
         <Grid item xs={12} sm={6} md={3}>
-          <Card elevation={0} sx={{ p: 2.5, borderRadius: '14px', border: '1px solid #E2E8F0', bgcolor: '#FFFFFF' }}>
+          <Card elevation={0} sx={{ p: 2.5, borderRadius: '20px', border: '1px solid #F1F5F9', bgcolor: '#FFFFFF', boxShadow: '0 4px 20px rgba(99, 102, 241, 0.04)' }}>
             <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
               <Box>
-                <Typography variant="caption" sx={{ fontWeight: 700, color: '#64748B', letterSpacing: 0.5 }}>
+                <Typography variant="caption" sx={{ fontWeight: 700, color: '#64748B', letterSpacing: '0.05em', textTransform: 'uppercase', fontSize: 11 }}>
                   CONVERSION
                 </Typography>
-                <Typography variant="h4" sx={{ fontWeight: 800, color: '#0F172A', my: 0.5 }}>
+                <Typography variant="h4" sx={{ fontWeight: 800, color: '#0F172A', my: 0.5, fontSize: 32 }}>
                   0
                 </Typography>
-                <Typography variant="caption" sx={{ color: '#64748B' }}>
+                <Typography variant="caption" sx={{ color: '#64748B', fontSize: 12 }}>
                   0% converted
                 </Typography>
               </Box>
-              <Box sx={{ p: 1.25, borderRadius: '10px', bgcolor: '#F0FDF4', color: '#10B981' }}>
-                <MdOutlineCheckCircle size={22} />
+              <Box sx={{ p: 1.5, borderRadius: '14px', bgcolor: '#DCFCE7', color: '#10B981' }}>
+                <MdOutlineCheckCircle size={24} />
               </Box>
             </Stack>
           </Card>
@@ -236,21 +218,21 @@ export default function InquiryDashboardPage() {
 
         {/* Avg Group Size */}
         <Grid item xs={12} sm={6} md={3}>
-          <Card elevation={0} sx={{ p: 2.5, borderRadius: '14px', border: '1px solid #E2E8F0', bgcolor: '#FFFFFF' }}>
+          <Card elevation={0} sx={{ p: 2.5, borderRadius: '20px', border: '1px solid #F1F5F9', bgcolor: '#FFFFFF', boxShadow: '0 4px 20px rgba(99, 102, 241, 0.04)' }}>
             <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
               <Box>
-                <Typography variant="caption" sx={{ fontWeight: 700, color: '#64748B', letterSpacing: 0.5 }}>
+                <Typography variant="caption" sx={{ fontWeight: 700, color: '#64748B', letterSpacing: '0.05em', textTransform: 'uppercase', fontSize: 11 }}>
                   AVG GROUP SIZE
                 </Typography>
-                <Typography variant="h4" sx={{ fontWeight: 800, color: '#0F172A', my: 0.5 }}>
+                <Typography variant="h4" sx={{ fontWeight: 800, color: '#0F172A', my: 0.5, fontSize: 32 }}>
                   {avgGroupSize}
                 </Typography>
-                <Typography variant="caption" sx={{ color: '#64748B' }}>
+                <Typography variant="caption" sx={{ color: '#64748B', fontSize: 12 }}>
                   travellers per enquiry
                 </Typography>
               </Box>
-              <Box sx={{ p: 1.25, borderRadius: '10px', bgcolor: '#F5F3FF', color: '#8B5CF6' }}>
-                <MdOutlineTrendingUp size={22} />
+              <Box sx={{ p: 1.5, borderRadius: '14px', bgcolor: '#E0F2FE', color: '#0284C7' }}>
+                <MdOutlineTrendingUp size={24} />
               </Box>
             </Stack>
           </Card>
@@ -261,8 +243,8 @@ export default function InquiryDashboardPage() {
       <Grid container spacing={2.5} sx={{ mb: 3 }}>
         {/* Lead Stage Funnel */}
         <Grid item xs={12} md={7}>
-          <Card elevation={0} sx={{ p: 3, borderRadius: '16px', border: '1px solid #E2E8F0', bgcolor: '#FFFFFF', height: '100%' }}>
-            <Typography variant="h6" sx={{ fontWeight: 700, color: '#0F172A', fontSize: 16 }}>
+          <Card elevation={0} sx={{ p: 3, borderRadius: '20px', border: '1px solid #F1F5F9', bgcolor: '#FFFFFF', height: '100%', boxShadow: '0 4px 20px rgba(99, 102, 241, 0.04)' }}>
+            <Typography variant="h6" sx={{ fontWeight: 800, color: '#0F172A', fontSize: 17 }}>
               Lead Stage Funnel
             </Typography>
             <Typography variant="body2" sx={{ color: '#64748B', mb: 3, fontSize: 13 }}>
@@ -274,14 +256,14 @@ export default function InquiryDashboardPage() {
                 <BarChart data={funnelData} margin={{ top: 10, right: 10, left: -20, bottom: 20 }}>
                   <XAxis
                     dataKey="stage"
-                    tick={{ fill: '#64748B', fontSize: 10 }}
+                    tick={{ fill: '#64748B', fontSize: 11, fontWeight: 600 }}
                     interval={0}
                     angle={-20}
                     textAnchor="end"
                   />
                   <YAxis tick={{ fill: '#64748B', fontSize: 11 }} allowDecimals={false} />
-                  <RechartsTooltip />
-                  <Bar dataKey="count" fill="#4B6BFB" radius={[6, 6, 0, 0]} barSize={36} />
+                  <RechartsTooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }} />
+                  <Bar dataKey="count" fill="#8B5CF6" radius={[8, 8, 0, 0]} barSize={36} />
                 </BarChart>
               </ResponsiveContainer>
             </Box>
@@ -290,8 +272,8 @@ export default function InquiryDashboardPage() {
 
         {/* Source Mix */}
         <Grid item xs={12} md={5}>
-          <Card elevation={0} sx={{ p: 3, borderRadius: '16px', border: '1px solid #E2E8F0', bgcolor: '#FFFFFF', height: '100%' }}>
-            <Typography variant="h6" sx={{ fontWeight: 700, color: '#0F172A', fontSize: 16 }}>
+          <Card elevation={0} sx={{ p: 3, borderRadius: '20px', border: '1px solid #F1F5F9', bgcolor: '#FFFFFF', height: '100%', boxShadow: '0 4px 20px rgba(99, 102, 241, 0.04)' }}>
+            <Typography variant="h6" sx={{ fontWeight: 800, color: '#0F172A', fontSize: 17 }}>
               Source Mix
             </Typography>
             <Typography variant="body2" sx={{ color: '#64748B', mb: 2.5, fontSize: 13 }}>
@@ -307,7 +289,7 @@ export default function InquiryDashboardPage() {
                       <Typography variant="body2" sx={{ fontWeight: 600, color: '#334155', fontSize: 13 }}>
                         {item.source}
                       </Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 700, color: '#0F172A', fontSize: 13 }}>
+                      <Typography variant="body2" sx={{ fontWeight: 800, color: '#0F172A', fontSize: 13 }}>
                         {item.count}
                       </Typography>
                     </Stack>
@@ -315,12 +297,12 @@ export default function InquiryDashboardPage() {
                       variant="determinate"
                       value={percentage}
                       sx={{
-                        height: 6,
-                        borderRadius: 3,
+                        height: 8,
+                        borderRadius: 4,
                         bgcolor: '#F1F5F9',
                         '& .MuiLinearProgress-bar': {
-                          bgcolor: item.count > 0 ? '#3B82F6' : '#CBD5E1',
-                          borderRadius: 3,
+                          background: item.count > 0 ? 'linear-gradient(90deg, #6366F1 0%, #8B5CF6 100%)' : '#CBD5E1',
+                          borderRadius: 4,
                         },
                       }}
                     />
@@ -328,100 +310,6 @@ export default function InquiryDashboardPage() {
                 );
               })}
             </Stack>
-          </Card>
-        </Grid>
-      </Grid>
-
-      {/* Main Grid Row 2 */}
-      <Grid container spacing={2.5}>
-        {/* Priority Split */}
-        <Grid item xs={12} md={6}>
-          <Card elevation={0} sx={{ p: 3, borderRadius: '16px', border: '1px solid #E2E8F0', bgcolor: '#FFFFFF' }}>
-            <Typography variant="h6" sx={{ fontWeight: 700, color: '#0F172A', fontSize: 16 }}>
-              Priority Split
-            </Typography>
-            <Typography variant="body2" sx={{ color: '#64748B', mb: 2, fontSize: 13 }}>
-              Hot, warm, and cold lead ratio.
-            </Typography>
-
-            <Grid container alignItems="center">
-              <Grid item xs={7}>
-                <Box sx={{ width: '100%', height: 200 }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={priorityData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={50}
-                        outerRadius={75}
-                        paddingAngle={4}
-                        dataKey="value"
-                      >
-                        {priorityData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <RechartsTooltip />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </Box>
-              </Grid>
-              <Grid item xs={5}>
-                <Stack spacing={1.5}>
-                  <Stack direction="row" alignItems="center" spacing={1.5}>
-                    <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: PRIORITY_COLORS.Hot }} />
-                    <Typography variant="body2" sx={{ color: '#475569', fontWeight: 600, fontSize: 13 }}>
-                      Hot
-                    </Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 700, color: '#0F172A', ml: 'auto' }}>
-                      {hotLeadsCount}
-                    </Typography>
-                  </Stack>
-                  <Stack direction="row" alignItems="center" spacing={1.5}>
-                    <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: PRIORITY_COLORS.Warm }} />
-                    <Typography variant="body2" sx={{ color: '#475569', fontWeight: 600, fontSize: 13 }}>
-                      Warm
-                    </Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 700, color: '#0F172A', ml: 'auto' }}>
-                      {warmLeadsCount}
-                    </Typography>
-                  </Stack>
-                  <Stack direction="row" alignItems="center" spacing={1.5}>
-                    <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: PRIORITY_COLORS.Cold }} />
-                    <Typography variant="body2" sx={{ color: '#475569', fontWeight: 600, fontSize: 13 }}>
-                      Cold
-                    </Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 700, color: '#0F172A', ml: 'auto' }}>
-                      {coldLeadsCount}
-                    </Typography>
-                  </Stack>
-                </Stack>
-              </Grid>
-            </Grid>
-          </Card>
-        </Grid>
-
-        {/* Daily Inquiry Trend */}
-        <Grid item xs={12} md={6}>
-          <Card elevation={0} sx={{ p: 3, borderRadius: '16px', border: '1px solid #E2E8F0', bgcolor: '#FFFFFF' }}>
-            <Typography variant="h6" sx={{ fontWeight: 700, color: '#0F172A', fontSize: 16 }}>
-              Daily Inquiry Trend
-            </Typography>
-            <Typography variant="body2" sx={{ color: '#64748B', mb: 2, fontSize: 13 }}>
-              Inflow by query date.
-            </Typography>
-
-            <Box sx={{ width: '100%', height: 200 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={trendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <XAxis dataKey="date" tick={{ fill: '#64748B', fontSize: 11 }} />
-                  <YAxis tick={{ fill: '#64748B', fontSize: 11 }} allowDecimals={false} />
-                  <RechartsTooltip />
-                  <Bar dataKey="count" fill="#0284C7" radius={[4, 4, 0, 0]} barSize={40} />
-                </BarChart>
-              </ResponsiveContainer>
-            </Box>
           </Card>
         </Grid>
       </Grid>

@@ -1,7 +1,6 @@
 import { Navigate } from 'react-router-dom';
 import { ROUTES } from '@constants/routes';
 
-import { InquiryProvider } from './contexts/InquiryContext';
 import InquiryDashboardPage from './pages/InquiryDashboardPage';
 import InquiryManualPage from './pages/InquiryManualPage';
 import InquiryLeadDetailPage from './pages/InquiryLeadDetailPage';
@@ -13,89 +12,63 @@ import InquiryBlankSubmodulePage from './pages/InquiryBlankSubmodulePage';
 export const inquiryRoutes = [
   {
     path: ROUTES.INQUIRY,
-    element: (
-      <InquiryProvider>
-        <Navigate to={ROUTES.INQUIRY_DASHBOARD} replace />
-      </InquiryProvider>
-    ),
+    element: <Navigate to={ROUTES.INQUIRY_DASHBOARD} replace />,
   },
   {
     path: ROUTES.INQUIRY_DASHBOARD,
-    element: (
-      <InquiryProvider>
-        <InquiryDashboardPage />
-      </InquiryProvider>
-    ),
+    element: <InquiryDashboardPage />,
   },
   {
     path: ROUTES.INQUIRY_MANUAL,
-    element: (
-      <InquiryProvider>
-        <InquiryManualPage />
-      </InquiryProvider>
-    ),
+    element: <InquiryManualPage />,
   },
   {
     path: ROUTES.INQUIRY_MANUAL_DETAIL,
-    element: (
-      <InquiryProvider>
-        <InquiryLeadDetailPage />
-      </InquiryProvider>
-    ),
+    element: <InquiryLeadDetailPage />,
   },
   {
     path: ROUTES.INQUIRY_WEBSITE,
     element: (
-      <InquiryProvider>
-        <InquiryBlankSubmodulePage
-          title="Inquiry Engine / Website"
-          subtitle="Manage website enquiry forms, web leads, and automated landing page submissions."
-        />
-      </InquiryProvider>
+      <InquiryBlankSubmodulePage
+        title="Inquiry Engine / Website"
+        subtitle="Manage website enquiry forms, web leads, and automated landing page submissions."
+      />
     ),
   },
   {
     path: ROUTES.INQUIRY_WHATSAPP,
     element: (
-      <InquiryProvider>
-        <InquiryBlankSubmodulePage
-          title="Inquiry Engine / WhatsApp"
-          subtitle="Manage incoming WhatsApp chat enquiries, chatbot triggers, and conversation history."
-        />
-      </InquiryProvider>
+      <InquiryBlankSubmodulePage
+        title="Inquiry Engine / WhatsApp"
+        subtitle="Manage incoming WhatsApp chat enquiries, chatbot triggers, and conversation history."
+      />
     ),
   },
   {
     path: ROUTES.INQUIRY_INSTAGRAM,
     element: (
-      <InquiryProvider>
-        <InquiryBlankSubmodulePage
-          title="Inquiry Engine / Instagram & Meta Ads"
-          subtitle="Track lead ad campaigns, DMs, and social media inquiry conversions."
-        />
-      </InquiryProvider>
+      <InquiryBlankSubmodulePage
+        title="Inquiry Engine / Instagram & Meta Ads"
+        subtitle="Track lead ad campaigns, DMs, and social media inquiry conversions."
+      />
     ),
   },
   {
     path: ROUTES.INQUIRY_B2B,
     element: (
-      <InquiryProvider>
-        <InquiryBlankSubmodulePage
-          title="Inquiry Engine / B2B Partners"
-          subtitle="Manage B2B agent enquiries, partner portals, and white-label requests."
-        />
-      </InquiryProvider>
+      <InquiryBlankSubmodulePage
+        title="Inquiry Engine / B2B Partners"
+        subtitle="Manage B2B agent enquiries, partner portals, and white-label requests."
+      />
     ),
   },
   {
     path: ROUTES.INQUIRY_REPEAT,
     element: (
-      <InquiryProvider>
-        <InquiryBlankSubmodulePage
-          title="Inquiry Engine / Repeat Customers"
-          subtitle="Track returning client enquiries, loyalty rewards, and automated follow-ups."
-        />
-      </InquiryProvider>
+      <InquiryBlankSubmodulePage
+        title="Inquiry Engine / Repeat Customers"
+        subtitle="Track returning client enquiries, loyalty rewards, and automated follow-ups."
+      />
     ),
   },
 ];

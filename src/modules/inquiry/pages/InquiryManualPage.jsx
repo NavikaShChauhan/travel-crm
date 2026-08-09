@@ -1,29 +1,28 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Box,
   Typography,
   Button,
+  Grid,
   Card,
-  Stack,
-  TextField,
-  MenuItem,
-  IconButton,
+  Chip,
+  Checkbox,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  Checkbox,
+  TextField,
   InputAdornment,
+  MenuItem,
+  Stack,
 } from '@mui/material';
 import {
   MdAdd,
-  MdOutlineExplore,
-  MdOutlineVisibility,
   MdSearch,
-  MdRefresh,
-  MdOutlineFileDownload,
+  MdOutlineAssignmentInd,
+  MdOutlineCloudDownload,
 } from 'react-icons/md';
 import { useNavigate } from 'react-router-dom';
 
@@ -32,7 +31,7 @@ import AddLeadModal from '../components/AddLeadModal';
 import EditLeadModal from '../components/EditLeadModal';
 import LeadDetailDrawer from '../components/LeadDetailDrawer';
 
-const SALES_USERS = ['Priya Nair', 'Neha Gupta', 'Rahul Sharma', 'Ananya Roy'];
+const SALES_USERS = ['Priya Nair', 'Neha Gupta', 'Rahul Sharma', 'Ananya Roy', 'Priya Sharma', 'Arjun Nair'];
 const OPS_USERS = ['Amit Kumar', 'Vikram Singh', 'Sonia Verma'];
 
 export default function InquiryManualPage() {
@@ -47,103 +46,103 @@ export default function InquiryManualPage() {
   } = useInquiry();
   const navigate = useNavigate();
 
-  const [selectedIds, setSelectedIds] = useState([]);
-  const [selectedSalesUser, setSelectedSalesUser] = useState('');
-  const [selectedOpsUser, setSelectedOpsUser] = useState('');
-  const [priorityFilter, setPriorityFilter] = useState('All');
+  const [selectedPriorityTab, setSelectedPriorityTab] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [bulkSalesUser, setBulkSalesUser] = useState('');
+  const [bulkOpsUser, setBulkOpsUser] = useState('');
 
-  // Handle select all
+  // Tab counters
+  const priorityCounts = useMemo(() => {
+    return {
+      All: leads.length,
+      Hot: leads.filter((l) => (l.priority || l.temperature) === 'Hot').length,
+      Warm: leads.filter((l) => (l.priority || l.temperature) === 'Warm').length,
+      Cold: leads.filter((l) => (l.priority || l.temperature) === 'Cold').length,
+    };
+  }, [leads]);
+
+  // Filtered Leads
+  const filteredLeads = useMemo(() => {
+    return leads.filter((lead) => {
+      const priority = lead.priority || lead.temperature || 'Warm';
+      const matchesTab = selectedPriorityTab === 'All' || priority === selectedPriorityTab;
+      const query = searchQuery.toLowerCase();
+      const clientName = (lead.clientName || lead.name || '').toLowerCase();
+      const phone = (lead.phone || lead.contactPhone || '').toLowerCase();
+      const email = (lead.email || lead.contactEmail || '').toLowerCase();
+      const dest = (lead.destination || '').toLowerCase();
+      const purpose = (lead.travelPurpose || lead.inquiryType || lead.requirement || '').toLowerCase();
+      const matchesSearch =
+        !searchQuery ||
+        lead.id.toLowerCase().includes(query) ||
+        clientName.includes(query) ||
+        phone.includes(query) ||
+        email.includes(query) ||
+        dest.includes(query) ||
+        purpose.includes(query);
+
+      return matchesTab && matchesSearch;
+    });
+  }, [leads, selectedPriorityTab, searchQuery]);
+
   const handleSelectAll = (e) => {
     if (e.target.checked) {
-      setSelectedIds(leads.map((l) => l.id));
+      setSelectedIds(filteredLeads.map((l) => l.id));
     } else {
       setSelectedIds([]);
     }
   };
 
-  // Handle select single row
   const handleSelectRow = (id) => {
     setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
     );
   };
 
-  // Assign user actions
-  const handleAssignSales = () => {
-    if (selectedIds.length === 0 || !selectedSalesUser) return;
-    assignUsers(selectedIds, { salesUser: selectedSalesUser });
-    setSelectedSalesUser('');
+  const handleAssignBulk = () => {
+    if (selectedIds.length === 0) return;
+    assignUsers(selectedIds, { salesUser: bulkSalesUser, opsUser: bulkOpsUser });
+    setSelectedIds([]);
+    setBulkSalesUser('');
+    setBulkOpsUser('');
   };
-
-  const handleAssignOps = () => {
-    if (selectedIds.length === 0 || !selectedOpsUser) return;
-    assignUsers(selectedIds, { opsUser: selectedOpsUser });
-    setSelectedOpsUser('');
-  };
-
-  // Filter leads by priority & search query
-  const filteredLeads = leads.filter((lead) => {
-    // Only manual or all leads in manual workspace
-    const matchesPriority =
-      priorityFilter === 'All' ||
-      (priorityFilter === 'No Status' ? !lead.priority : lead.priority === priorityFilter);
-
-    const query = searchQuery.toLowerCase();
-    const matchesSearch =
-      !query ||
-      lead.clientName.toLowerCase().includes(query) ||
-      lead.id.toLowerCase().includes(query) ||
-      lead.phone.includes(query) ||
-      lead.email.toLowerCase().includes(query) ||
-      lead.destination.toLowerCase().includes(query);
-
-    return matchesPriority && matchesSearch;
-  });
 
   return (
-    <Box sx={{ p: { xs: 2, md: 3 }, bgcolor: '#F8FAFC', minHeight: '100vh' }}>
+    <Box>
       <AddLeadModal />
       <EditLeadModal open={isEditModalOpen} onClose={closeEditModal} lead={editingLead} />
       <LeadDetailDrawer />
 
-      {/* Header Banner */}
-      <Card
-        elevation={0}
-        sx={{
-          p: 2.5,
-          mb: 3,
-          borderRadius: '16px',
-          bgcolor: '#FFFFFF',
-          border: '1px solid #E2E8F0',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
-        }}
-      >
-        <Stack direction={{ xs: 'column', sm: 'row' }} alignItems="center" justifyContent="space-between" spacing={2}>
-          <Stack direction="row" alignItems="center" spacing={2}>
-            <Box
-              sx={{
-                width: 48,
-                height: 48,
-                borderRadius: '12px',
-                bgcolor: '#F1F5F9',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#475569',
-              }}
-            >
-              <MdOutlineExplore size={28} />
-            </Box>
-            <Box>
-              <Typography variant="h5" sx={{ fontWeight: 800, color: '#0F172A', fontSize: 22 }}>
-                Inquiry Engine / Manual
-              </Typography>
-              <Typography variant="body2" sx={{ color: '#64748B', fontSize: 13, mt: 0.25 }}>
-                Manual enquiries workspace with actionable pipeline controls.
-              </Typography>
-            </Box>
-          </Stack>
+      {/* Header Bar */}
+      <Stack direction={{ xs: 'column', sm: 'row' }} alignItems="center" justifyContent="space-between" spacing={2} sx={{ mb: 3 }}>
+        <Box>
+          <Typography variant="h5" sx={{ fontWeight: 800, color: '#0F172A', fontSize: 22 }}>
+            Inquiry Engine Manual Workspace
+          </Typography>
+          <Typography variant="body2" sx={{ color: '#64748B', fontSize: 13, mt: 0.25 }}>
+            Manage full 7-section travel enquiries, travel purpose, and sales assignments.
+          </Typography>
+        </Box>
+
+        <Stack direction="row" spacing={1.5}>
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={<MdOutlineCloudDownload size={18} />}
+            sx={{
+              borderColor: '#CBD5E1',
+              color: '#475569',
+              bgcolor: '#FFFFFF',
+              borderRadius: '8px',
+              px: 2,
+              py: 0.75,
+              fontWeight: 600,
+              textTransform: 'none',
+            }}
+          >
+            Export Enquiries
+          </Button>
           <Button
             variant="contained"
             disableElevation
@@ -154,211 +153,202 @@ export default function InquiryManualPage() {
               '&:hover': { bgcolor: '#2563EB' },
               borderRadius: '8px',
               px: 2.5,
-              py: 1,
+              py: 0.75,
               fontWeight: 600,
               textTransform: 'none',
               fontSize: 14,
             }}
           >
-            Add Lead
+            + Add Lead
           </Button>
         </Stack>
-      </Card>
+      </Stack>
 
-      {/* Control Bar: Assign Sales & Ops Users */}
-      <Card
-        elevation={0}
-        sx={{
-          p: 2,
-          mb: 2.5,
-          borderRadius: '12px',
-          bgcolor: '#FFFFFF',
-          border: '1px solid #E2E8F0',
-        }}
-      >
-        <Stack direction={{ xs: 'column', md: 'row' }} alignItems="center" justifyContent="space-between" spacing={2}>
-          <Stack direction={{ xs: 'column', sm: 'row' }} alignItems="center" spacing={2} sx={{ flex: 1, width: '100%' }}>
-            {/* Assign Sales Users Box */}
-            <Box
-              sx={{
-                border: '1px solid #E0F2FE',
-                borderRadius: '8px',
-                p: 1.25,
-                bgcolor: '#F0F9FF',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 1,
-                width: { xs: '100%', sm: 280 },
-              }}
-            >
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#0284C7', fontSize: 11 }}>
-                Assign Sales Users
+      {/* Quick Summary Strip */}
+      <Grid container spacing={2} sx={{ mb: 3 }}>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card elevation={0} sx={{ p: 2, borderRadius: '12px', border: '1px solid #E2E8F0', bgcolor: '#FFFFFF' }}>
+            <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700, letterSpacing: 0.5 }}>
+              ACTIVE ENQUIRIES
+            </Typography>
+            <Typography variant="h5" sx={{ fontWeight: 800, color: '#0F172A', my: 0.5 }}>
+              {leads.length}
+            </Typography>
+            <Typography variant="caption" sx={{ color: '#64748B' }}>
+              Showing {filteredLeads.length} filtered
+            </Typography>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={3}>
+          <Card elevation={0} sx={{ p: 2, borderRadius: '12px', border: '1px solid #E2E8F0', bgcolor: '#FFFFFF' }}>
+            <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700, letterSpacing: 0.5 }}>
+              HOT PRIORITY
+            </Typography>
+            <Typography variant="h5" sx={{ fontWeight: 800, color: '#EF4444', my: 0.5 }}>
+              {priorityCounts.Hot}
+            </Typography>
+            <Typography variant="caption" sx={{ color: '#64748B' }}>
+              Requires immediate action
+            </Typography>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={3}>
+          <Card elevation={0} sx={{ p: 2, borderRadius: '12px', border: '1px solid #E2E8F0', bgcolor: '#FFFFFF' }}>
+            <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700, letterSpacing: 0.5 }}>
+              WARM PRIORITY
+            </Typography>
+            <Typography variant="h5" sx={{ fontWeight: 800, color: '#D97706', my: 0.5 }}>
+              {priorityCounts.Warm}
+            </Typography>
+            <Typography variant="caption" sx={{ color: '#64748B' }}>
+              Follow-up scheduled
+            </Typography>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={3}>
+          <Card elevation={0} sx={{ p: 2, borderRadius: '12px', border: '1px solid #E2E8F0', bgcolor: '#FFFFFF' }}>
+            <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700, letterSpacing: 0.5 }}>
+              UNASSIGNED SALES
+            </Typography>
+            <Typography variant="h5" sx={{ fontWeight: 800, color: '#2563EB', my: 0.5 }}>
+              {leads.filter((l) => !l.assignedSalesUser && !l.salesExecutive).length}
+            </Typography>
+            <Typography variant="caption" sx={{ color: '#64748B' }}>
+              Ready for executive allocation
+            </Typography>
+          </Card>
+        </Grid>
+      </Grid>
+
+      {/* Bulk Action & Assign Bar */}
+      <Card elevation={0} sx={{ p: 2, mb: 2.5, borderRadius: '12px', border: '1px solid #E2E8F0', bgcolor: '#FFFFFF' }}>
+        <Grid container spacing={2} alignItems="center">
+          <Grid item xs={12} md={3}>
+            <Stack direction="row" alignItems="center" spacing={1}>
+              <Box sx={{ p: 0.75, borderRadius: '6px', bgcolor: '#EFF6FF', color: '#2563EB' }}>
+                <MdOutlineAssignmentInd size={20} />
+              </Box>
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#0F172A' }}>
+                Bulk User Assignment
               </Typography>
-              <Stack direction="row" spacing={1}>
-                <TextField
-                  select
-                  fullWidth
-                  size="small"
-                  value={selectedSalesUser}
-                  onChange={(e) => setSelectedSalesUser(e.target.value)}
-                  displayEmpty
-                  sx={{ bgcolor: '#FFFFFF', borderRadius: '6px' }}
-                >
-                  <MenuItem value="" disabled>
-                    Select Sales Users
-                  </MenuItem>
-                  {SALES_USERS.map((user) => (
-                    <MenuItem key={user} value={user}>
-                      {user}
-                    </MenuItem>
-                  ))}
-                </TextField>
-                <Button
-                  variant="outlined"
-                  size="small"
-                  onClick={handleAssignSales}
-                  disabled={selectedIds.length === 0 || !selectedSalesUser}
-                  sx={{ bgcolor: '#FFFFFF', textTransform: 'none', fontWeight: 600, px: 2 }}
-                >
-                  Assign
-                </Button>
-              </Stack>
-            </Box>
+            </Stack>
+            <Typography variant="caption" sx={{ color: '#64748B', display: 'block', mt: 0.25 }}>
+              Select rows using checkboxes to reassign users.
+            </Typography>
+          </Grid>
 
-            {/* Assign Ops Users Box */}
-            <Box
-              sx={{
-                border: '1px solid #E0F2FE',
-                borderRadius: '8px',
-                p: 1.25,
-                bgcolor: '#F0F9FF',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 1,
-                width: { xs: '100%', sm: 280 },
-              }}
-            >
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#0284C7', fontSize: 11 }}>
-                Assign Ops Users
-              </Typography>
-              <Stack direction="row" spacing={1}>
-                <TextField
-                  select
-                  fullWidth
-                  size="small"
-                  value={selectedOpsUser}
-                  onChange={(e) => setSelectedOpsUser(e.target.value)}
-                  displayEmpty
-                  sx={{ bgcolor: '#FFFFFF', borderRadius: '6px' }}
-                >
-                  <MenuItem value="" disabled>
-                    Select Ops Users
-                  </MenuItem>
-                  {OPS_USERS.map((user) => (
-                    <MenuItem key={user} value={user}>
-                      {user}
-                    </MenuItem>
-                  ))}
-                </TextField>
-                <Button
-                  variant="outlined"
-                  size="small"
-                  onClick={handleAssignOps}
-                  disabled={selectedIds.length === 0 || !selectedOpsUser}
-                  sx={{ bgcolor: '#FFFFFF', textTransform: 'none', fontWeight: 600, px: 2 }}
-                >
-                  Assign
-                </Button>
-              </Stack>
-            </Box>
-          </Stack>
-
-          {/* Archive & Export buttons */}
-          <Stack direction="row" spacing={1.5} alignItems="center">
-            <Button
-              variant="outlined"
+          <Grid item xs={12} sm={6} md={3}>
+            <TextField
+              select
+              fullWidth
               size="small"
+              label="Select Sales User"
+              value={bulkSalesUser}
+              onChange={(e) => setBulkSalesUser(e.target.value)}
+              disabled={selectedIds.length === 0}
+            >
+              {SALES_USERS.map((user) => (
+                <MenuItem key={user} value={user}>
+                  {user}
+                </MenuItem>
+              ))}
+            </TextField>
+          </Grid>
+
+          <Grid item xs={12} sm={6} md={3}>
+            <TextField
+              select
+              fullWidth
+              size="small"
+              label="Select Ops User"
+              value={bulkOpsUser}
+              onChange={(e) => setBulkOpsUser(e.target.value)}
+              disabled={selectedIds.length === 0}
+            >
+              {OPS_USERS.map((user) => (
+                <MenuItem key={user} value={user}>
+                  {user}
+                </MenuItem>
+              ))}
+            </TextField>
+          </Grid>
+
+          <Grid item xs={12} md={3}>
+            <Button
+              fullWidth
+              variant="contained"
+              disableElevation
+              onClick={handleAssignBulk}
+              disabled={selectedIds.length === 0 || (!bulkSalesUser && !bulkOpsUser)}
               sx={{
+                bgcolor: '#3B82F6',
+                '&:hover': { bgcolor: '#2563EB' },
                 borderRadius: '8px',
-                borderColor: '#CBD5E1',
-                color: '#475569',
-                textTransform: 'none',
+                py: 1,
                 fontWeight: 600,
-                px: 2,
-                py: 0.75,
+                textTransform: 'none',
               }}
             >
-              Archive (0)
+              Assign to Selected ({selectedIds.length})
             </Button>
-            <IconButton sx={{ border: '1px solid #CBD5E1', borderRadius: '8px', color: '#475569', p: 0.75 }}>
-              <MdRefresh size={20} />
-            </IconButton>
-            <IconButton sx={{ border: '1px solid #CBD5E1', borderRadius: '8px', color: '#475569', p: 0.75 }}>
-              <MdOutlineFileDownload size={20} />
-            </IconButton>
-          </Stack>
-        </Stack>
+          </Grid>
+        </Grid>
       </Card>
 
-      {/* Priority Filter Bar & Search */}
+      {/* Priority Tabs & Search Bar */}
       <Stack
         direction={{ xs: 'column', sm: 'row' }}
         alignItems="center"
         justifyContent="space-between"
         spacing={2}
-        sx={{ mb: 2.5 }}
+        sx={{ mb: 2 }}
       >
-        {/* Priority Tabs */}
-        <Stack direction="row" spacing={2} sx={{ borderBottom: '2px solid #E2E8F0', pb: 0.5 }}>
-          {[
-            { label: 'All', color: '#64748B' },
-            { label: 'Hot', color: '#EF4444' },
-            { label: 'Warm', color: '#F59E0B' },
-            { label: 'Cold', color: '#3B82F6' },
-            { label: 'No Status', color: '#0F172A' },
-          ].map((tab) => {
-            const isSelected = priorityFilter === tab.label;
+        {/* Tabs */}
+        <Stack direction="row" spacing={1}>
+          {['All', 'Hot', 'Warm', 'Cold'].map((tab) => {
+            const isSelected = selectedPriorityTab === tab;
+            const count = priorityCounts[tab];
             return (
-              <Box
-                key={tab.label}
-                onClick={() => setPriorityFilter(tab.label)}
+              <Chip
+                key={tab}
+                label={`${tab} (${count})`}
+                onClick={() => setSelectedPriorityTab(tab)}
                 sx={{
+                  fontWeight: isSelected ? 700 : 600,
+                  bgcolor: isSelected ? '#3B82F6' : '#FFFFFF',
+                  color: isSelected ? '#FFFFFF' : '#475569',
+                  border: '1px solid',
+                  borderColor: isSelected ? '#3B82F6' : '#E2E8F0',
+                  px: 1,
+                  py: 2,
                   cursor: 'pointer',
-                  pb: 1,
-                  borderBottom: isSelected ? `3px solid ${tab.color}` : '3px solid transparent',
-                  transition: 'all 0.2s ease',
+                  '&:hover': {
+                    bgcolor: isSelected ? '#2563EB' : '#F1F5F9',
+                  },
                 }}
-              >
-                <Typography
-                  variant="body2"
-                  sx={{
-                    fontWeight: isSelected ? 700 : 500,
-                    color: isSelected ? tab.color : '#64748B',
-                    fontSize: 13,
-                  }}
-                >
-                  {tab.label}
-                </Typography>
-              </Box>
+              />
             );
           })}
         </Stack>
 
-        {/* Search Bar */}
+        {/* Search */}
         <TextField
-          placeholder="Search by name, lead id, contact"
+          placeholder="Search by ID, client name, phone, email, purpose..."
           size="small"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
-                <MdSearch size={20} style={{ color: '#94A3B8' }} />
+                <MdSearch size={18} color="#64748B" />
               </InputAdornment>
             ),
           }}
           sx={{
-            width: { xs: '100%', sm: 300 },
+            width: { xs: '100%', sm: 320 },
             bgcolor: '#FFFFFF',
             borderRadius: '8px',
             '& .MuiOutlinedInput-root': { borderRadius: '8px' },
@@ -376,26 +366,24 @@ export default function InquiryManualPage() {
           bgcolor: '#FFFFFF',
         }}
       >
-        <Table sx={{ minWidth: 900 }}>
+        <Table sx={{ minWidth: 950 }}>
           <TableHead sx={{ bgcolor: '#F8FAFC' }}>
             <TableRow>
               <TableCell padding="checkbox">
                 <Checkbox
-                  indeterminate={
-                    selectedIds.length > 0 && selectedIds.length < leads.length
-                  }
+                  indeterminate={selectedIds.length > 0 && selectedIds.length < leads.length}
                   checked={leads.length > 0 && selectedIds.length === leads.length}
                   onChange={handleSelectAll}
                 />
               </TableCell>
-              <TableCell sx={{ fontWeight: 700, color: '#475569', fontSize: 12 }}>VIEW</TableCell>
               <TableCell sx={{ fontWeight: 700, color: '#475569', fontSize: 12 }}>ID</TableCell>
               <TableCell sx={{ fontWeight: 700, color: '#475569', fontSize: 12 }}>DATE/TIME</TableCell>
               <TableCell sx={{ fontWeight: 700, color: '#475569', fontSize: 12 }}>NAME/NUMBER/EMAIL</TableCell>
+              <TableCell sx={{ fontWeight: 700, color: '#475569', fontSize: 12 }}>TYPE OF INQUIRY</TableCell>
               <TableCell sx={{ fontWeight: 700, color: '#475569', fontSize: 12 }}>PAX</TableCell>
-              <TableCell sx={{ fontWeight: 700, color: '#475569', fontSize: 12 }}>DESCRIPTION</TableCell>
               <TableCell sx={{ fontWeight: 700, color: '#475569', fontSize: 12 }}>TRAVEL DATE</TableCell>
               <TableCell sx={{ fontWeight: 700, color: '#475569', fontSize: 12 }}>DESTINATION</TableCell>
+              <TableCell sx={{ fontWeight: 700, color: '#475569', fontSize: 12 }}>SALES EXEC</TableCell>
               <TableCell sx={{ fontWeight: 700, color: '#475569', fontSize: 12 }}>LAST UPDATED</TableCell>
             </TableRow>
           </TableHead>
@@ -414,22 +402,18 @@ export default function InquiryManualPage() {
                     key={lead.id}
                     hover
                     selected={isSelected}
-                    sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                    onClick={() => openDrawer(lead.id)}
+                    sx={{
+                      cursor: 'pointer',
+                      '&:last-child td, &:last-child th': { border: 0 },
+                      '&:hover': { bgcolor: '#F8FAFC' },
+                    }}
                   >
-                    <TableCell padding="checkbox">
+                    <TableCell padding="checkbox" onClick={(e) => e.stopPropagation()}>
                       <Checkbox
                         checked={isSelected}
                         onChange={() => handleSelectRow(lead.id)}
                       />
-                    </TableCell>
-                    <TableCell>
-                      <IconButton
-                        size="small"
-                        onClick={() => openDrawer(lead.id)}
-                        sx={{ color: '#64748B' }}
-                      >
-                        <MdOutlineVisibility size={18} />
-                      </IconButton>
                     </TableCell>
                     <TableCell>
                       <Box>
@@ -437,25 +421,25 @@ export default function InquiryManualPage() {
                           variant="body2"
                           sx={{
                             fontWeight: 700,
-                            color: '#1E293B',
-                            cursor: 'pointer',
-                            '&:hover': { color: '#2563EB' },
+                            color: '#2563EB',
+                            '&:hover': { textDecoration: 'underline' },
                           }}
-                          onClick={() => navigate(`/inquiry/manual/${encodeURIComponent(lead.id)}`)}
                         >
                           {lead.id}
                         </Typography>
                         <Typography
                           variant="caption"
                           sx={{
-                            color: '#2563EB',
+                            color: '#0EA5E9',
                             fontWeight: 600,
                             cursor: 'pointer',
-                            textDecoration: 'underline',
                             display: 'block',
                             mt: 0.25,
                           }}
-                          onClick={() => navigate(`/inquiry/manual/${encodeURIComponent(lead.id)}`)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/inquiry/manual/${encodeURIComponent(lead.id)}`);
+                          }}
                         >
                           Open Profile Page
                         </Typography>
@@ -463,54 +447,58 @@ export default function InquiryManualPage() {
                     </TableCell>
                     <TableCell>
                       <Typography variant="body2" sx={{ color: '#475569', fontSize: 12.5 }}>
-                        {lead.date}
+                        {lead.date || lead.registrationDate}
                       </Typography>
                     </TableCell>
                     <TableCell>
                       <Box>
                         <Typography variant="body2" sx={{ fontWeight: 700, color: '#0F172A', fontSize: 13 }}>
-                          {lead.clientName}
+                          {lead.clientName || lead.name}
                         </Typography>
                         <Typography variant="caption" sx={{ color: '#64748B', display: 'block' }}>
-                          {lead.phone}
+                          {lead.phone || lead.contactPhone}
                         </Typography>
                         <Typography variant="caption" sx={{ color: '#64748B', display: 'block' }}>
-                          {lead.email}
+                          {lead.email || lead.contactEmail}
                         </Typography>
                       </Box>
                     </TableCell>
                     <TableCell>
-                      <Typography variant="body2" sx={{ fontWeight: 600, color: '#1E293B' }}>
-                        {lead.pax}
-                      </Typography>
-                    </TableCell>
-                    <TableCell sx={{ maxWidth: 220 }}>
-                      <Typography
-                        variant="body2"
+                      <Chip
+                        label={lead.travelPurpose || lead.inquiryType || lead.requirement || 'Leisure'}
+                        size="small"
                         sx={{
-                          color: '#475569',
-                          fontSize: 12,
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          display: '-webkit-box',
-                          WebkitLineClamp: 2,
-                          WebkitBoxOrient: 'vertical',
+                          fontWeight: 700,
+                          fontSize: 11,
+                          bgcolor: '#EFF6FF',
+                          color: '#2563EB',
+                          borderRadius: '6px',
                         }}
-                      >
-                        {lead.description}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2" sx={{ fontWeight: 600, color: '#1E293B' }}>
+                        {lead.pax || lead.totalPax || 1}
                       </Typography>
                     </TableCell>
                     <TableCell>
                       <Typography variant="body2" sx={{ color: '#475569', fontSize: 12 }}>
-                        {lead.travelStart}
+                        {lead.travelStart || lead.departureDate}
                       </Typography>
-                      <Typography variant="body2" sx={{ color: '#475569', fontSize: 12 }}>
-                        {lead.travelEnd}
-                      </Typography>
+                      {lead.travelEnd && (
+                        <Typography variant="body2" sx={{ color: '#64748B', fontSize: 11 }}>
+                          to {lead.travelEnd || lead.returnDate}
+                        </Typography>
+                      )}
                     </TableCell>
                     <TableCell>
                       <Typography variant="body2" sx={{ fontWeight: 600, color: '#1E293B' }}>
                         {lead.destination}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2" sx={{ color: '#475569', fontSize: 12, fontWeight: 600 }}>
+                        {lead.assignedSalesUser || lead.salesExecutive || 'Priya Nair'}
                       </Typography>
                     </TableCell>
                     <TableCell>

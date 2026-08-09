@@ -1,75 +1,68 @@
 import { useState, useEffect } from 'react';
-import { Box, Drawer, List, ListItemButton, Tooltip, Typography, Stack, IconButton, ListItemIcon, ListItemText } from '@mui/material';
-import { NavLink, useLocation } from 'react-router-dom';
+import { Box, Drawer, List, ListItemButton, Tooltip, Typography, Stack, IconButton } from '@mui/material';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { MdOutlineChevronLeft, MdOutlineChevronRight } from 'react-icons/md';
 
 import { NAV_ITEMS } from '@constants/navigation';
 import { useSidebar } from '@contexts/SidebarContext';
 import { tokens } from '@styles/theme';
 
-export const SIDEBAR_WIDTH = 240;
-export const SIDEBAR_WIDTH_COLLAPSED = 64;
+export const SIDEBAR_WIDTH = 260;
+export const SIDEBAR_WIDTH_COLLAPSED = 72;
 
 /**
- * The route/compass mark: two crossed lines meeting at a gold point —
- * this is the app's signature motif, echoed at small scale as the
- * active-nav indicator below.
+ * Modern Brand Mark (panze studio inspired purple aesthetic)
+ * Perfectly centered when collapsed without sticking to edges
  */
 function BrandMark({ collapsed }) {
   return (
-    <Stack direction="row" alignItems="center" spacing={1.25} sx={{ px: collapsed ? 0 : 2.5, py: 2.5, justifyContent: collapsed ? 'center' : 'flex-start' }}>
+    <Stack
+      direction="row"
+      alignItems="center"
+      spacing={1.5}
+      sx={{
+        px: collapsed ? 0 : 3,
+        py: 2.5,
+        width: '100%',
+        justifyContent: collapsed ? 'center' : 'flex-start',
+      }}
+    >
       <Box
         sx={{
-          width: 30,
-          height: 30,
+          width: 38,
+          height: 38,
           flexShrink: 0,
-          borderRadius: '8px',
-          bgcolor: tokens.color.gold500,
+          borderRadius: '12px',
+          background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
+          boxShadow: '0 8px 20px rgba(99, 102, 241, 0.3)',
+          mx: collapsed ? 'auto' : 0,
         }}
       >
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <path d="M2 12 L8 2 L14 12 L10.5 12 L8 7.5 L5.5 12 Z" fill={tokens.color.navy900} />
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="#FFFFFF" />
+          <path d="M2 17L12 22L22 17" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M2 12L12 17L22 12" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </Box>
       {!collapsed && (
-        <Typography sx={{ fontFamily: tokens.font.display, fontWeight: 700, fontSize: 18, color: '#fff' }}>
-          Voyage
-        </Typography>
+        <Box>
+          <Typography sx={{ fontFamily: tokens.font.display, fontWeight: 800, fontSize: 20, color: '#0F172A', letterSpacing: '-0.02em', lineHeight: 1.1 }}>
+            voyage
+          </Typography>
+          <Typography variant="caption" sx={{ color: '#8B5CF6', fontWeight: 700, letterSpacing: '0.05em', fontSize: 10, textTransform: 'uppercase' }}>
+            CRM Studio
+          </Typography>
+        </Box>
       )}
     </Stack>
   );
 }
 
-const SIDEBAR_ITEM_HEIGHT = 44;
-const SIDEBAR_ITEM_RADIUS = 16;
-const SIDEBAR_TOGGLE_SIZE = 40;
-const SIDEBAR_TOGGLE_FLOAT_OFFSET = 20;
-const SIDEBAR_TOGGLE_FLOAT_RIGHT = `calc(100vw - ${SIDEBAR_WIDTH_COLLAPSED + SIDEBAR_TOGGLE_FLOAT_OFFSET}px)`;
-
-const SIDEBAR_ITEM_SX = {
-  borderRadius: SIDEBAR_ITEM_RADIUS,
-  minHeight: SIDEBAR_ITEM_HEIGHT,
-  width: '100%',
-  px: 1.25,
-  py: 0.75,
-  display: 'flex',
-  alignItems: 'center',
-  color: 'rgba(255,255,255,0.72)',
-  transition: 'background-color 180ms ease, color 180ms ease',
-  '&:hover': {
-    borderRadius: 0,
-    bgcolor: tokens.color.navy700,
-    color: '#fff',
-  },
-  '&.active': {
-    borderRadius: 0,
-    bgcolor: tokens.color.navy700,
-    color: '#fff',
-  },
-};
+const SIDEBAR_ITEM_HEIGHT = 46;
+const SIDEBAR_ITEM_RADIUS = 24;
 
 function SidebarItem({
   label,
@@ -79,86 +72,99 @@ function SidebarItem({
   onClick,
   to,
   isParent,
-  children,
   chevron,
 }) {
-  const sharedProps = {
-    onClick,
-    sx: {
-      ...SIDEBAR_ITEM_SX,
-      justifyContent: collapsed ? 'center' : 'space-between',
-      px: collapsed ? 1 : 1.75,
-      ...(children && { width: '100%' }),
-      ...(isActive && { borderRadius: 0 }),
+  const itemStyle = {
+    borderRadius: `${SIDEBAR_ITEM_RADIUS}px`,
+    minHeight: SIDEBAR_ITEM_HEIGHT,
+    width: '100%',
+    px: collapsed ? 1.25 : 2,
+    py: 1,
+    my: 0.25,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: collapsed ? 'center' : 'space-between',
+    color: isActive ? '#FFFFFF' : '#475569',
+    background: isActive ? 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)' : 'transparent',
+    boxShadow: isActive ? '0 8px 20px rgba(139, 92, 246, 0.3)' : 'none',
+    transition: 'all 200ms ease',
+    '&:hover': {
+      borderRadius: `${SIDEBAR_ITEM_RADIUS}px`,
+      bgcolor: isActive ? 'none' : '#F1F5F9',
+      color: isActive ? '#FFFFFF' : '#0F172A',
     },
   };
 
+  const content = (
+    <Stack direction="row" alignItems="center" spacing={1.5} sx={{ width: '100%', minWidth: 0, justifyContent: collapsed ? 'center' : 'flex-start' }}>
+      <Box
+        sx={{
+          minWidth: 22,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: isActive ? '#FFFFFF' : '#64748B',
+          mx: collapsed ? 'auto' : 0,
+        }}
+      >
+        <Icon size={20} style={{ flexShrink: 0 }} />
+      </Box>
+      {!collapsed && (
+        <Typography
+          variant="body2"
+          sx={{
+            fontWeight: isActive ? 700 : 600,
+            fontSize: 14,
+            lineHeight: 1.2,
+            whiteSpace: 'nowrap',
+            color: isActive ? '#FFFFFF' : '#334155',
+            flex: 1,
+          }}
+        >
+          {label}
+        </Typography>
+      )}
+      {!collapsed && isParent && (
+        <Box sx={{ color: isActive ? '#FFFFFF' : '#94A3B8', display: 'flex', alignItems: 'center' }}>
+          {chevron || <MdOutlineChevronRight size={18} />}
+        </Box>
+      )}
+    </Stack>
+  );
+
   if (to) {
     return (
-      <ListItemButton
-        component={NavLink}
-        to={to}
-        end
-        {...sharedProps}
-      >
-        <Stack direction="row" alignItems="center" spacing={1.25} sx={{ width: '100%', minWidth: 0 }}>
-          <Box sx={{ minWidth: 20, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Icon size={19} style={{ flexShrink: 0 }} />
-          </Box>
-          {!collapsed && (
-            <Typography variant="body2" sx={{ fontWeight: 500, fontSize: 13, lineHeight: 1.2, whiteSpace: 'nowrap' }}>
-              {label}
-            </Typography>
-          )}
-          {!collapsed && isParent && chevron}
-        </Stack>
+      <ListItemButton component={NavLink} to={to} end onClick={onClick} sx={itemStyle}>
+        {content}
       </ListItemButton>
     );
   }
 
   return (
-    <ListItemButton
-      {...sharedProps}
-    >
-      <Stack direction="row" alignItems="center" spacing={1.25} sx={{ width: '100%', minWidth: 0 }}>
-        <Box sx={{ minWidth: 20, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <Icon size={19} style={{ flexShrink: 0 }} />
-        </Box>
-        {!collapsed && (
-          <Typography variant="body2" sx={{ fontWeight: 500, fontSize: 13, lineHeight: 1.2, whiteSpace: 'nowrap' }}>
-            {label}
-          </Typography>
-        )}
-      </Stack>
+    <ListItemButton onClick={onClick} sx={itemStyle}>
+      {content}
     </ListItemButton>
   );
 }
 
 function SidebarToggleButton({ collapsed, onClick, ariaLabel }) {
-  const isFloating = collapsed;
-
   return (
     <IconButton
       onClick={onClick}
       aria-label={ariaLabel}
       sx={{
-        width: SIDEBAR_TOGGLE_SIZE,
-        height: SIDEBAR_TOGGLE_SIZE,
+        width: 32,
+        height: 32,
         borderRadius: '50%',
-        border: '1px solid rgba(255,255,255,0.12)',
-        bgcolor: tokens.color.navy900,
-        color: '#FFFFFF',
-        boxShadow: '0 8px 24px rgba(0,0,0,0.18)',
+        border: '1px solid #E2E8F0',
+        bgcolor: '#FFFFFF',
+        color: '#475569',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.06)',
         cursor: 'pointer',
-        transition: 'all 250ms ease',
-        position: isFloating ? 'fixed' : 'absolute',
-        top: isFloating ? '50%' : '50%',
-        transform: isFloating ? 'translateY(-50%)' : 'translateY(-50%)',
-        right: isFloating ? SIDEBAR_TOGGLE_FLOAT_RIGHT : 16,
-        zIndex: 1000,
+        transition: 'all 200ms ease',
         '&:hover': {
-          bgcolor: tokens.color.navy800,
-          transform: isFloating ? 'translateY(-50%) scale(1.05)' : 'translateY(-50%) scale(1.05)',
+          bgcolor: '#F8FAFC',
+          color: '#8B5CF6',
         },
       }}
     >
@@ -169,31 +175,54 @@ function SidebarToggleButton({ collapsed, onClick, ariaLabel }) {
 
 function NavList({ collapsed, onNavigate }) {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
+  const { isCollapsed, expandSidebar } = useSidebar();
+
+  // State maps item.path -> boolean for expanded accordion
   const [expanded, setExpanded] = useState(() => {
-    const init = {};
-    NAV_ITEMS.forEach((item) => {
-      if (item.children) {
-        init[item.path] = pathname.startsWith(item.path);
-      }
-    });
-    return init;
+    const activeParent = NAV_ITEMS.find(
+      (item) => item.children && (pathname === item.path || item.children.some((c) => pathname === c.path))
+    );
+    return activeParent ? { [activeParent.path]: true } : {};
   });
 
+  // Sync expanded state on route changes - ALWAYS ensure ONLY 1 module accordion is open at a time
   useEffect(() => {
-    setExpanded((prev) => {
-      const next = { ...prev };
-      NAV_ITEMS.forEach((item) => {
-        if (item.children && !(item.path in prev)) {
-          next[item.path] = pathname.startsWith(item.path);
-        }
-      });
-      return next;
-    });
+    const activeParent = NAV_ITEMS.find(
+      (item) => item.children && (pathname === item.path || item.children.some((c) => pathname === c.path))
+    );
+    if (activeParent) {
+      setExpanded({ [activeParent.path]: true });
+    } else {
+      setExpanded({});
+    }
   }, [pathname]);
 
+  const handleParentClick = (item, event) => {
+    // 1. Automatically expand sidebar if collapsed
+    if (isCollapsed) {
+      expandSidebar();
+    }
+
+    // 2. Single Accordion Exclusivity: Close all other module submodules, open ONLY the clicked module
+    if (item.children && item.children.length > 0) {
+      event.preventDefault();
+      setExpanded({ [item.path]: true });
+      const firstChildPath = item.children[0].path;
+      navigate(firstChildPath);
+      if (onNavigate) onNavigate();
+    } else {
+      // Direct module navigation without children (e.g. Dashboard, Operations, Finance) -> close all submodules
+      setExpanded({});
+      navigate(item.path);
+      if (onNavigate) onNavigate();
+    }
+  };
+
   return (
-    <List sx={{ px: collapsed ? 1 : 1.5, py: 1 }}>
-      {NAV_ITEMS.map(({ label, path, icon: Icon, children }) => {
+    <List sx={{ px: collapsed ? 1.25 : 2, py: 1 }}>
+      {NAV_ITEMS.map((item) => {
+        const { label, path, icon: Icon, children } = item;
         const isActiveParent = pathname === path || children?.some(({ path: childPath }) => pathname === childPath);
         const isExpanded = Boolean(expanded[path]);
 
@@ -204,30 +233,22 @@ function NavList({ collapsed, onNavigate }) {
             icon={Icon}
             collapsed={collapsed}
             isActive={isActiveParent}
-            onClick={(event) => {
-              if (children) {
-                event.preventDefault();
-                setExpanded((prev) => ({ ...prev, [path]: !prev[path] }));
-                if (onNavigate) onNavigate();
-              } else if (onNavigate) {
-                onNavigate();
-              }
-            }}
-            to={children ? undefined : path}
+            onClick={(e) => handleParentClick(item, e)}
             isParent={Boolean(children)}
             chevron={
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', ml: 1 }}>
-                <MdOutlineChevronRight
-                  size={18}
-                  style={{ transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }}
-                />
-              </Box>
+              <MdOutlineChevronRight
+                size={18}
+                style={{
+                  transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
+                  transition: 'transform 0.2s ease',
+                }}
+              />
             }
           />
         );
 
         return (
-          <Box key={path}>
+          <Box key={path} sx={{ mb: 0.5 }}>
             {collapsed ? (
               <Tooltip title={label} placement="right">
                 {parentItem}
@@ -236,7 +257,7 @@ function NavList({ collapsed, onNavigate }) {
               parentItem
             )}
             {!collapsed && isExpanded && children && (
-              <List disablePadding sx={{ pl: 2.5, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+              <List disablePadding sx={{ pl: 2, display: 'flex', flexDirection: 'column', gap: 0.25, mt: 0.25 }}>
                 {children.map(({ label: childLabel, path: childPath, icon: ChildIcon }) => (
                   <SidebarItem
                     key={childPath}
@@ -257,7 +278,7 @@ function NavList({ collapsed, onNavigate }) {
   );
 }
 
-/** Desktop persistent sidebar (collapsible) */
+/** Desktop persistent sidebar (clean white floating studio design) */
 export function DesktopSidebar() {
   const { isCollapsed, toggleCollapsed } = useSidebar();
   const width = isCollapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH;
@@ -270,38 +291,40 @@ export function DesktopSidebar() {
         flexDirection: 'column',
         width,
         flexShrink: 0,
-        bgcolor: tokens.color.navy900,
+        bgcolor: '#FFFFFF',
         height: '100vh',
         position: 'sticky',
         top: 0,
         transition: 'width 0.2s ease',
-        borderRight: `1px solid ${tokens.color.navy700}`,
-        overflow: 'visible',
+        borderRight: '1px solid #F1F5F9',
+        boxShadow: '4px 0 24px rgba(99, 102, 241, 0.03)',
+        zIndex: 100,
       }}
     >
-      <Box sx={{ position: 'relative', minHeight: 72, display: 'flex', alignItems: 'center' }}>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: isCollapsed ? 'center' : 'space-between',
+          width: '100%',
+          pr: isCollapsed ? 0 : 2,
+        }}
+      >
         <BrandMark collapsed={isCollapsed} />
-
-        {!isCollapsed ? (
-          <SidebarToggleButton
-            collapsed={false}
-            onClick={toggleCollapsed}
-            ariaLabel="Collapse sidebar"
-          />
-        ) : null}
+        {!isCollapsed && (
+          <SidebarToggleButton collapsed={false} onClick={toggleCollapsed} ariaLabel="Collapse sidebar" />
+        )}
       </Box>
 
-      <Box sx={{ flex: 1, overflowY: 'auto' }}>
+      <Box sx={{ flex: 1, overflowY: 'auto', py: 1 }}>
         <NavList collapsed={isCollapsed} />
       </Box>
 
-      {isCollapsed ? (
-        <SidebarToggleButton
-          collapsed
-          onClick={toggleCollapsed}
-          ariaLabel="Expand sidebar"
-        />
-      ) : null}
+      {isCollapsed && (
+        <Box sx={{ p: 2, display: 'flex', justifyContent: 'center' }}>
+          <SidebarToggleButton collapsed onClick={toggleCollapsed} ariaLabel="Expand sidebar" />
+        </Box>
+      )}
     </Box>
   );
 }
@@ -317,7 +340,7 @@ export function MobileSidebar() {
       onClose={closeMobile}
       ModalProps={{ keepMounted: true }}
       sx={{ display: { xs: 'block', md: 'none' } }}
-      PaperProps={{ sx: { width: SIDEBAR_WIDTH, bgcolor: tokens.color.navy900 } }}
+      PaperProps={{ sx: { width: SIDEBAR_WIDTH, bgcolor: '#FFFFFF' } }}
     >
       <BrandMark collapsed={false} />
       <NavList collapsed={false} onNavigate={closeMobile} />
