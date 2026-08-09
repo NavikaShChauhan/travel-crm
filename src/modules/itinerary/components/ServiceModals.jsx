@@ -18,9 +18,70 @@ import {
   Divider,
   Chip,
   FormControlLabel,
-  Checkbox
+  Checkbox,
+  Autocomplete
 } from '@mui/material';
 import { MdClose, MdAdd, MdDeleteOutline } from 'react-icons/md';
+import { DESTINATIONS_DATABASE } from '@/constants/destinations.data';
+
+// Helper: get dynamic Pickup & Drop location options based on trip destination
+const getTripLocationOptions = (destination = '', hotelName = '') => {
+  const options = new Set();
+
+  // 1. Major Airport Hubs
+  options.add('Chandigarh International Airport (IXC)');
+  options.add('Indira Gandhi International Airport, Delhi (DEL)');
+  options.add('Shimla Airport, Jubbarhatti (SLV)');
+  options.add('Kullu Manali Airport, Bhuntar (KUU)');
+  options.add('Dharamshala Kangra Airport (DHM)');
+  options.add('Srinagar International Airport (SXR)');
+  options.add('Jaipur International Airport (JAI)');
+  options.add('Goa Dabolim Airport (GOI)');
+  options.add('Velana International Airport, Male (MLE)');
+  options.add('Ngurah Rai International Airport, Bali (DPS)');
+
+  // 2. Railway Stations
+  options.add('Chandigarh Railway Station');
+  options.add('Kalka Railway Station');
+  options.add('Shimla Railway Station');
+  options.add('New Delhi Railway Station');
+  options.add('Haridwar Railway Station');
+  options.add('Jaipur Junction');
+
+  // 3. Landmarks & Hotel Hubs
+  options.add('Mall Road, Shimla');
+  options.add('Mall Road, Manali');
+  options.add('Solang Valley, Manali');
+  options.add('Old Manali');
+  options.add('Hadimba Temple, Manali');
+  options.add('McLeod Ganj, Dharamshala');
+  options.add('Bhagsunag Temple, Dharamshala');
+  options.add('Dal Lake, Srinagar');
+  options.add('Gulmarg Gondola Base');
+
+  if (hotelName) {
+    options.add(hotelName);
+  }
+
+  // 4. Cities from DESTINATIONS_DATABASE
+  if (Array.isArray(DESTINATIONS_DATABASE)) {
+    DESTINATIONS_DATABASE.forEach((d) => {
+      options.add(`${d.city}, ${d.country}`);
+    });
+  }
+
+  const all = Array.from(options);
+  if (!destination) return all;
+
+  const destParts = destination.toLowerCase().split(',').map((d) => d.trim()).filter(Boolean);
+  const prioritized = all.filter((loc) => {
+    const lLower = loc.toLowerCase();
+    return destParts.some((part) => lLower.includes(part));
+  });
+
+  const rest = all.filter((loc) => !prioritized.includes(loc));
+  return [...prioritized, ...rest];
+};
 
 // Static lists for room categories and views (POV wise)
 const ROOM_CATEGORIES = [
@@ -65,6 +126,18 @@ const HOTEL_DATABASE = [
       'Deluxe': 1200,
       'Super Deluxe': 1200,
       'Executive Suite': 1500
+    },
+    mealPlans: {
+      'Standard': ['EP', 'CP'],
+      'Deluxe': ['EP', 'CP', 'MAP'],
+      'Super Deluxe': ['EP', 'CP', 'MAP', 'AP'],
+      'Executive Suite': ['EP', 'CP', 'MAP', 'AP', 'AI']
+    },
+    occupancy: {
+      'Standard': { maxAdults: 2, maxChildren: 1 },
+      'Deluxe': { maxAdults: 2, maxChildren: 2 },
+      'Super Deluxe': { maxAdults: 3, maxChildren: 2 },
+      'Executive Suite': { maxAdults: 3, maxChildren: 2 }
     }
   },
   {
@@ -82,6 +155,16 @@ const HOTEL_DATABASE = [
       'Deluxe': 1500,
       'Super Deluxe': 1800,
       'Suite': 2500
+    },
+    mealPlans: {
+      'Deluxe': ['EP', 'CP', 'MAP'],
+      'Super Deluxe': ['EP', 'CP', 'MAP', 'AP'],
+      'Suite': ['EP', 'CP', 'MAP', 'AP', 'AI']
+    },
+    occupancy: {
+      'Deluxe': { maxAdults: 2, maxChildren: 1 },
+      'Super Deluxe': { maxAdults: 3, maxChildren: 2 },
+      'Suite': { maxAdults: 4, maxChildren: 2 }
     }
   },
   {
@@ -99,6 +182,16 @@ const HOTEL_DATABASE = [
       'Standard': 1000,
       'Deluxe': 1200,
       'Super Deluxe': 1500
+    },
+    mealPlans: {
+      'Standard': ['EP', 'CP'],
+      'Deluxe': ['EP', 'CP', 'MAP'],
+      'Super Deluxe': ['EP', 'CP', 'MAP', 'AP']
+    },
+    occupancy: {
+      'Standard': { maxAdults: 2, maxChildren: 1 },
+      'Deluxe': { maxAdults: 2, maxChildren: 2 },
+      'Super Deluxe': { maxAdults: 3, maxChildren: 2 }
     }
   },
   {
@@ -116,6 +209,16 @@ const HOTEL_DATABASE = [
       'Ocean Front Villa': 4500,
       'Overwater Villa': 6000,
       'Beach Villa': 5000
+    },
+    mealPlans: {
+      'Ocean Front Villa': ['EP', 'CP', 'MAP', 'AP', 'AI'],
+      'Overwater Villa': ['CP', 'MAP', 'AP', 'AI'],
+      'Beach Villa': ['EP', 'CP', 'MAP', 'AP', 'AI']
+    },
+    occupancy: {
+      'Ocean Front Villa': { maxAdults: 2, maxChildren: 1 },
+      'Overwater Villa': { maxAdults: 2, maxChildren: 0 },
+      'Beach Villa': { maxAdults: 3, maxChildren: 2 }
     }
   },
   {
@@ -133,6 +236,16 @@ const HOTEL_DATABASE = [
       'Deluxe': 1800,
       'Premier Room': 2000,
       'Suite': 3000
+    },
+    mealPlans: {
+      'Deluxe': ['EP', 'CP', 'MAP'],
+      'Premier Room': ['EP', 'CP', 'MAP', 'AP'],
+      'Suite': ['EP', 'CP', 'MAP', 'AP', 'AI']
+    },
+    occupancy: {
+      'Deluxe': { maxAdults: 2, maxChildren: 1 },
+      'Premier Room': { maxAdults: 2, maxChildren: 2 },
+      'Suite': { maxAdults: 4, maxChildren: 2 }
     }
   },
   {
@@ -150,24 +263,89 @@ const HOTEL_DATABASE = [
       'Premier Room': 2500,
       'Luxury Balcony Room': 3500,
       'Executive Suite': 5000
+    },
+    mealPlans: {
+      'Premier Room': ['CP', 'MAP', 'AP'],
+      'Luxury Balcony Room': ['CP', 'MAP', 'AP', 'AI'],
+      'Executive Suite': ['CP', 'MAP', 'AP', 'AI']
+    },
+    occupancy: {
+      'Premier Room': { maxAdults: 2, maxChildren: 1 },
+      'Luxury Balcony Room': { maxAdults: 2, maxChildren: 2 },
+      'Executive Suite': { maxAdults: 3, maxChildren: 2 }
     }
   }
 ];
 
-const MEAL_PLAN_RATES = {
-  EP: 0,
-  CP: 500,
-  MAP: 1200,
-  AP: 1800,
-  AI: 2500
+// Meal plan labels — rate is 0 because meals are included in the room rate
+const MEAL_PLAN_LABELS = {
+  EP: 'Room Only (EP)',
+  CP: 'Breakfast Only (CP)',
+  MAP: 'Half Board (MAP)',
+  AP: 'Full Board (AP)',
+  AI: 'All Inclusive'
 };
 
-const MEAL_PLAN_SUBTEXTS = {
-  EP: 'Room Only (No extra meal cost)',
-  CP: 'Adds ₹500 per person, per night',
-  MAP: 'Adds ₹1,200 per person, per night',
-  AP: 'Adds ₹1,800 per person, per night',
-  AI: 'Adds ₹2,500 per person, per night'
+const MEAL_PLAN_DESCRIPTIONS = {
+  EP: 'Room only — no meals included',
+  CP: 'Breakfast included in room rate',
+  MAP: 'Breakfast + Lunch or Dinner included in room rate',
+  AP: 'Breakfast + Lunch + Dinner included in room rate',
+  AI: 'All meals, snacks & beverages included in room rate'
+};
+
+// Helper: get available meal plans for a given hotel and room type
+const getAvailableMealPlans = (hotelName, roomType) => {
+  const hotel = HOTEL_DATABASE.find((h) => h.name === hotelName);
+  if (hotel && hotel.mealPlans && hotel.mealPlans[roomType]) {
+    return hotel.mealPlans[roomType];
+  }
+  // Fallback: all plans
+  return ['EP', 'CP', 'MAP', 'AP', 'AI'];
+};
+
+const DEFAULT_ROOM_MEALS = {
+  'Standard': 'CP',
+  'Deluxe': 'CP',
+  'Super Deluxe': 'MAP',
+  'Executive Suite': 'AP',
+  'Suite': 'AP',
+  'Villa': 'AI',
+  'Ocean Front Villa': 'AI',
+  'Overwater Villa': 'AI',
+  'Beach Villa': 'MAP',
+  'Premier Room': 'MAP',
+  'Luxury Balcony Room': 'MAP',
+  'Penthouse': 'AI'
+};
+
+// Helper: get fixed included meal plan for a given hotel and room type
+const getRoomIncludedMealPlan = (hotelName, roomType) => {
+  const hotel = HOTEL_DATABASE.find((h) => h.name === hotelName);
+  if (hotel && hotel.mealPlans && hotel.mealPlans[roomType]) {
+    const plans = hotel.mealPlans[roomType];
+    const rType = roomType || '';
+    if (rType.includes('Super') || rType.includes('Premier') || rType.includes('Luxury')) {
+      return plans.includes('MAP') ? 'MAP' : (plans[0] || 'CP');
+    }
+    if (rType.includes('Suite') || rType.includes('Villa') || rType.includes('Penthouse')) {
+      return plans.includes('AP') ? 'AP' : plans.includes('AI') ? 'AI' : (plans[0] || 'MAP');
+    }
+    if (rType.includes('Deluxe')) {
+      return plans.includes('CP') ? 'CP' : (plans[0] || 'EP');
+    }
+    return plans[0] || 'CP';
+  }
+  return DEFAULT_ROOM_MEALS[roomType] || 'CP';
+};
+
+// Helper: get occupancy for a given hotel and room type
+const getRoomOccupancy = (hotelName, roomType) => {
+  const hotel = HOTEL_DATABASE.find((h) => h.name === hotelName);
+  if (hotel && hotel.occupancy && hotel.occupancy[roomType]) {
+    return hotel.occupancy[roomType];
+  }
+  return { maxAdults: 2, maxChildren: 1 };
 };
 
 const CABIN_CLASSES = ['Economy', 'Premium Economy', 'Business', 'First'];
@@ -178,13 +356,42 @@ const VEHICLE_OPTIONS = [
   { type: 'SUV', capacity: 6, rate: 3500, label: 'SUV (Max 6 Pax)' },
   { type: 'Mini Van', capacity: 8, rate: 5000, label: 'Mini Van (Max 8 Pax)' },
   { type: 'Tempo Traveller', capacity: 12, rate: 7500, label: 'Tempo Traveller (Max 12 Pax)' },
-  { type: 'Luxury Coach', capacity: 35, rate: 15000, label: 'Luxury Coach (Max 35 Pax)' }
+  { type: 'Luxury Coach', capacity: 35, rate: 15000, label: 'Luxury Coach (Max 35 Pax)' },
+  { type: 'Innova Crysta', capacity: 7, rate: 4000, label: 'Innova Crysta (Max 7 Pax)' },
+  { type: 'Ertiga', capacity: 6, rate: 3200, label: 'Ertiga (Max 6 Pax)' },
+  { type: 'Bike', capacity: 2, rate: 800, label: 'Bike (Max 2 Pax)' },
+  { type: 'Auto Rickshaw', capacity: 3, rate: 500, label: 'Auto Rickshaw (Max 3 Pax)' }
+];
+
+// Preset transport service titles for quick selection
+const TRANSPORT_TITLE_PRESETS = [
+  'Private Airport Pickup & Drop',
+  'Airport Transfer',
+  'Railway Station Transfer',
+  'Full Day Sightseeing Cab',
+  'Half Day Sightseeing Cab',
+  'Inter-city Transfer',
+  'Hotel to Airport Drop',
+  'Hotel to Railway Station Drop',
+  'Private Car at Disposal',
+  'Point to Point Transfer',
+  'Bus Station Transfer',
+  'Cruise Port Transfer',
+  'Local Sightseeing Tour',
+  'Night Safari Transfer',
+  'Adventure Activity Transfer'
 ];
 
 // Helper to auto-distribute rooms based on total traveler count
-const autoDistributeRooms = (totalPax, defaultCategory = 'Super Deluxe', defaultView = 'Pool View', defaultRate = 6300, defaultExtraRate = 1200) => {
+const autoDistributeRooms = (totalPax, defaultCategory = 'Super Deluxe', defaultView = 'Pool View', defaultRate = 6300, defaultExtraRate = 1200, hotelName = '', defaultMealPlan = 'CP') => {
   const pax = Math.max(1, parseInt(totalPax || 2, 10));
-  const neededRooms = Math.ceil(pax / 2);
+  const occupancy = getRoomOccupancy(hotelName, defaultCategory);
+  const maxPerRoom = occupancy.maxAdults || 2;
+  const neededRooms = Math.ceil(pax / maxPerRoom);
+
+  // Pick first valid meal plan for this room type
+  const availablePlans = getAvailableMealPlans(hotelName, defaultCategory);
+  const mealPlan = availablePlans.includes(defaultMealPlan) ? defaultMealPlan : (availablePlans[0] || 'CP');
 
   const rooms = [];
   for (let i = 0; i < neededRooms; i++) {
@@ -193,12 +400,15 @@ const autoDistributeRooms = (totalPax, defaultCategory = 'Super Deluxe', default
       roomType: defaultCategory,
       roomView: defaultView,
       noOfRooms: 1,
-      adultsPerRoom: 2,
-      childrenPerRoom: 1,
+      adultsPerRoom: Math.min(2, occupancy.maxAdults),
+      childrenPerRoom: Math.min(1, occupancy.maxChildren),
+      mealPlan: mealPlan,
       ratePerNight: defaultRate,
-      extraBedRequired: true,
-      noOfExtraBeds: 1,
-      ratePerExtraBed: defaultExtraRate
+      extraBedRequired: false,
+      noOfExtraBeds: 0,
+      ratePerExtraBed: defaultExtraRate,
+      maxAdults: occupancy.maxAdults,
+      maxChildren: occupancy.maxChildren
     });
   }
   return rooms;
@@ -217,7 +427,7 @@ const selectVehicleForPax = (totalPax) => {
   };
 };
 
-export default function ServiceModal({ open, onClose, onSave, type, initialData, travelers }) {
+export default function ServiceModal({ open, onClose, onSave, type, initialData, travelers, destination }) {
   const [formData, setFormData] = useState({});
 
   const totalPax = (travelers?.adults || 1) + (travelers?.children || 0);
@@ -237,6 +447,19 @@ export default function ServiceModal({ open, onClose, onSave, type, initialData,
           const rate = seeded.ratePerNight || 6300;
           seeded.allocatedRooms = autoDistributeRooms(totalPax, cat, view, rate);
         }
+      } else if (type === 'Transport') {
+        const rec = selectVehicleForPax(totalPax);
+        if (!seeded.allocatedVehicles || seeded.allocatedVehicles.length === 0) {
+          seeded.allocatedVehicles = [
+            {
+              id: `veh-${Date.now()}-0`,
+              vehicleType: seeded.vehicleType || rec.vehicleType,
+              vehicleCount: seeded.vehicleCount || rec.vehicleCount,
+              dailyRate: seeded.dailyRate || rec.dailyRate,
+              capacity: rec.capacity
+            }
+          ];
+        }
       }
       setFormData(seeded);
     } else {
@@ -250,25 +473,31 @@ export default function ServiceModal({ open, onClose, onSave, type, initialData,
 
       if (type === 'Hotel') {
         const defaultHotel = HOTEL_DATABASE[0];
+        const defaultRoomType = defaultHotel.roomTypes[0] || 'Super Deluxe';
+        const defaultOccupancy = getRoomOccupancy(defaultHotel.name, defaultRoomType);
+        const defaultMealPlans = getAvailableMealPlans(defaultHotel.name, defaultRoomType);
+        const defaultMealPlan = defaultMealPlans.includes('CP') ? 'CP' : (defaultMealPlans[0] || 'CP');
         defaultState.title = defaultHotel.name;
         defaultState.location = defaultHotel.location;
         defaultState.confirmationNo = 'CNF-88213';
         defaultState.checkInDate = '';
         defaultState.checkOutDate = '';
-        defaultState.mealPlan = 'CP';
         defaultState.nights = 1;
         defaultState.allocatedRooms = [
           {
             id: `room-${Date.now()}-0`,
-            roomType: 'Super Deluxe',
-            roomView: 'Pool View',
+            roomType: defaultRoomType,
+            roomView: defaultHotel.roomViews[0] || 'Pool View',
             noOfRooms: 1,
-            adultsPerRoom: 2,
-            childrenPerRoom: 1,
-            ratePerNight: 6300,
-            extraBedRequired: true,
-            noOfExtraBeds: 1,
-            ratePerExtraBed: 1200
+            adultsPerRoom: Math.min(2, defaultOccupancy.maxAdults),
+            childrenPerRoom: Math.min(1, defaultOccupancy.maxChildren),
+            mealPlan: defaultMealPlan,
+            ratePerNight: defaultHotel.rates[defaultRoomType] || 6300,
+            extraBedRequired: false,
+            noOfExtraBeds: 0,
+            ratePerExtraBed: defaultHotel.extraBedRates[defaultRoomType] || 1200,
+            maxAdults: defaultOccupancy.maxAdults,
+            maxChildren: defaultOccupancy.maxChildren
           }
         ];
         defaultState.specialRequests = '';
@@ -284,14 +513,20 @@ export default function ServiceModal({ open, onClose, onSave, type, initialData,
         defaultState.infantCost = 0;
       } else if (type === 'Transport') {
         const rec = selectVehicleForPax(totalPax);
-        defaultState.vehicleType = rec.vehicleType;
-        defaultState.vehicleCount = rec.vehicleCount;
         defaultState.days = 1;
-        defaultState.dailyRate = rec.dailyRate;
         defaultState.fromLocation = '';
         defaultState.toLocation = '';
         defaultState.pickupTime = '';
         defaultState.dropTime = '';
+        defaultState.allocatedVehicles = [
+          {
+            id: `veh-${Date.now()}-0`,
+            vehicleType: rec.vehicleType,
+            vehicleCount: rec.vehicleCount,
+            dailyRate: rec.dailyRate,
+            capacity: rec.capacity
+          }
+        ];
       } else if (type === 'Sightseeing' || type === 'Activity') {
         defaultState.location = '';
         defaultState.adultCost = 0;
@@ -323,8 +558,7 @@ export default function ServiceModal({ open, onClose, onSave, type, initialData,
 
     if (type === 'Hotel') {
       const nights = parseInt(formData.nights || 1, 10);
-      const mealAddon = MEAL_PLAN_RATES[formData.mealPlan || 'CP'] || 0;
-      const totalTravelers = (travelers?.adults || 1) + (travelers?.children || 0);
+      // Meals are included in the room rate — no extra meal charges
 
       const roomsSum = (formData.allocatedRooms || []).reduce((acc, r) => {
         const rCount = parseInt(r.noOfRooms || r.roomCount || 1, 10);
@@ -334,7 +568,7 @@ export default function ServiceModal({ open, onClose, onSave, type, initialData,
         return acc + rCount * rRate + extraBeds * extraRate;
       }, 0);
 
-      total = (roomsSum + mealAddon * totalTravelers) * nights;
+      total = roomsSum * nights;
     } else if (type === 'Flight') {
       const adults = parseInt(travelers?.adults || 1, 10);
       const children = parseInt(travelers?.children || 0, 10);
@@ -355,9 +589,19 @@ export default function ServiceModal({ open, onClose, onSave, type, initialData,
       }
     } else if (type === 'Transport') {
       const days = parseInt(formData.days || 1, 10);
-      const count = parseInt(formData.vehicleCount || 1, 10);
-      const rate = parseFloat(formData.dailyRate || 0);
-      total = days * count * rate;
+      const vehicles = formData.allocatedVehicles || [];
+      if (vehicles.length > 0) {
+        const vehiclesSum = vehicles.reduce((acc, v) => {
+          const vCount = parseInt(v.vehicleCount || 1, 10);
+          const vRate = parseFloat(v.dailyRate || 0);
+          return acc + (vCount * vRate);
+        }, 0);
+        total = days * vehiclesSum;
+      } else {
+        const count = parseInt(formData.vehicleCount || 1, 10);
+        const rate = parseFloat(formData.dailyRate || 0);
+        total = days * count * rate;
+      }
 
       if (formData.pickupTime && formData.dropTime) {
         const [sH, sM] = formData.pickupTime.split(':').map(Number);
@@ -387,7 +631,6 @@ export default function ServiceModal({ open, onClose, onSave, type, initialData,
     });
   }, [
     formData.nights,
-    formData.mealPlan,
     formData.allocatedRooms,
     formData.adultCost,
     formData.childCost,
@@ -420,28 +663,44 @@ export default function ServiceModal({ open, onClose, onSave, type, initialData,
       const defaultRoomView = matched.roomViews[0] || 'Pool View';
       const defaultRate = matched.rates[defaultRoomType] || 6300;
       const defaultExtraRate = matched.extraBedRates[defaultRoomType] || 1200;
+      const occupancy = getRoomOccupancy(matched.name, defaultRoomType);
+      const availablePlans = getAvailableMealPlans(matched.name, defaultRoomType);
+      const defaultMealPlan = availablePlans.includes('CP') ? 'CP' : (availablePlans[0] || 'CP');
 
       const rooms =
         prev.allocatedRooms && prev.allocatedRooms.length > 0
-          ? prev.allocatedRooms.map((r) => ({
-              ...r,
-              roomType: defaultRoomType,
-              roomView: defaultRoomView,
-              ratePerNight: defaultRate,
-              ratePerExtraBed: defaultExtraRate
-            }))
+          ? prev.allocatedRooms.map((r) => {
+              const roomOcc = getRoomOccupancy(matched.name, defaultRoomType);
+              const roomPlans = getAvailableMealPlans(matched.name, defaultRoomType);
+              const roomMeal = roomPlans.includes(r.mealPlan) ? r.mealPlan : (roomPlans[0] || 'CP');
+              return {
+                ...r,
+                roomType: defaultRoomType,
+                roomView: defaultRoomView,
+                ratePerNight: defaultRate,
+                ratePerExtraBed: defaultExtraRate,
+                mealPlan: roomMeal,
+                adultsPerRoom: Math.min(r.adultsPerRoom || 2, roomOcc.maxAdults),
+                childrenPerRoom: Math.min(r.childrenPerRoom || 1, roomOcc.maxChildren),
+                maxAdults: roomOcc.maxAdults,
+                maxChildren: roomOcc.maxChildren
+              };
+            })
           : [
               {
                 id: `room-${Date.now()}-0`,
                 roomType: defaultRoomType,
                 roomView: defaultRoomView,
                 noOfRooms: 1,
-                adultsPerRoom: 2,
-                childrenPerRoom: 1,
+                adultsPerRoom: Math.min(2, occupancy.maxAdults),
+                childrenPerRoom: Math.min(1, occupancy.maxChildren),
+                mealPlan: defaultMealPlan,
                 ratePerNight: defaultRate,
-                extraBedRequired: true,
-                noOfExtraBeds: 1,
-                ratePerExtraBed: defaultExtraRate
+                extraBedRequired: false,
+                noOfExtraBeds: 0,
+                ratePerExtraBed: defaultExtraRate,
+                maxAdults: occupancy.maxAdults,
+                maxChildren: occupancy.maxChildren
               }
             ];
 
@@ -489,18 +748,24 @@ export default function ServiceModal({ open, onClose, onSave, type, initialData,
       const defaultView = hotelObj?.roomViews[0] || 'Pool View';
       const defaultRate = hotelObj?.rates[defaultType] || 6300;
       const defaultExtraRate = hotelObj?.extraBedRates[defaultType] || 1200;
+      const occupancy = getRoomOccupancy(prev.title, defaultType);
+      const availablePlans = getAvailableMealPlans(prev.title, defaultType);
+      const defaultMealPlan = availablePlans.includes('CP') ? 'CP' : (availablePlans[0] || 'CP');
 
       const newRoom = {
         id: `room-${Date.now()}-${current.length}`,
         roomType: defaultType,
         roomView: defaultView,
         noOfRooms: 1,
-        adultsPerRoom: 2,
-        childrenPerRoom: 1,
+        adultsPerRoom: Math.min(2, occupancy.maxAdults),
+        childrenPerRoom: Math.min(1, occupancy.maxChildren),
+        mealPlan: defaultMealPlan,
         ratePerNight: defaultRate,
-        extraBedRequired: true,
-        noOfExtraBeds: 1,
-        ratePerExtraBed: defaultExtraRate
+        extraBedRequired: false,
+        noOfExtraBeds: 0,
+        ratePerExtraBed: defaultExtraRate,
+        maxAdults: occupancy.maxAdults,
+        maxChildren: occupancy.maxChildren
       };
       return { ...prev, allocatedRooms: [...current, newRoom] };
     });
@@ -531,13 +796,28 @@ export default function ServiceModal({ open, onClose, onSave, type, initialData,
         hotelObj?.rates[newType] ||
         (newType === 'Standard' ? 4500 : newType === 'Deluxe' ? 5500 : newType === 'Super Deluxe' ? 6300 : 8500);
       const newExtraRate = hotelObj?.extraBedRates[newType] || 1200;
+      const occupancy = getRoomOccupancy(prev.title, newType);
+      const includedMealPlan = getRoomIncludedMealPlan(prev.title, newType);
 
       current[index] = {
         ...current[index],
         roomType: newType,
         ratePerNight: newRate,
-        ratePerExtraBed: newExtraRate
+        ratePerExtraBed: newExtraRate,
+        mealPlan: includedMealPlan,
+        adultsPerRoom: Math.min(current[index]?.adultsPerRoom || 2, occupancy.maxAdults),
+        childrenPerRoom: Math.min(current[index]?.childrenPerRoom || 1, occupancy.maxChildren),
+        maxAdults: occupancy.maxAdults,
+        maxChildren: occupancy.maxChildren
       };
+      return { ...prev, allocatedRooms: current };
+    });
+  };
+
+  const handleRoomMealPlanChange = (index, newMealPlan) => {
+    setFormData((prev) => {
+      const current = [...(prev.allocatedRooms || [])];
+      current[index] = { ...current[index], mealPlan: newMealPlan };
       return { ...prev, allocatedRooms: current };
     });
   };
@@ -555,7 +835,6 @@ export default function ServiceModal({ open, onClose, onSave, type, initialData,
     const rooms = formData.allocatedRooms || [];
     const checkInDate = formData.checkInDate || '';
     const checkOutDate = formData.checkOutDate || '';
-    const mealPlan = formData.mealPlan || 'CP';
 
     const availableHotelNames = HOTEL_DATABASE.map((h) => h.name);
     const availableLocations = Array.from(new Set(HOTEL_DATABASE.map((h) => h.location)));
@@ -568,20 +847,22 @@ export default function ServiceModal({ open, onClose, onSave, type, initialData,
           </Typography>
           <Grid container spacing={2}>
             <Grid item xs={12} sm={6}>
-              <FormControl fullWidth size="small" required>
-                <InputLabel>Hotel Name *</InputLabel>
-                <Select
-                  value={formData.title || ''}
-                  label="Hotel Name *"
-                  onChange={(e) => handleHotelNameChange(e.target.value)}
-                >
-                  {availableHotelNames.map((name) => (
-                    <MenuItem key={name} value={name}>
-                      {name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <Autocomplete
+                freeSolo
+                options={availableHotelNames}
+                value={formData.title || ''}
+                onChange={(e, newValue) => {
+                  if (newValue) handleHotelNameChange(newValue);
+                }}
+                onInputChange={(e, newInputValue, reason) => {
+                  if (reason === 'input') {
+                    handleFieldChange('title', newInputValue);
+                  }
+                }}
+                renderInput={(params) => (
+                  <TextField {...params} label="Hotel Name *" size="small" required placeholder="Select or type hotel name" />
+                )}
+              />
             </Grid>
 
             <Grid item xs={12} sm={6}>
@@ -634,51 +915,6 @@ export default function ServiceModal({ open, onClose, onSave, type, initialData,
         </Box>
 
         <Box>
-          <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#1E293B', mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
-            Meal Plan
-          </Typography>
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, mb: 1 }}>
-            {[
-              { code: 'EP', label: 'Room Only (EP)' },
-              { code: 'CP', label: 'Breakfast Only (CP)' },
-              { code: 'MAP', label: 'Half Board (MAP)' },
-              { code: 'AP', label: 'Full Board (AP)' },
-              { code: 'AI', label: 'All Inclusive' }
-            ].map((plan) => {
-              const isSelected = mealPlan === plan.code;
-              return (
-                <Button
-                  key={plan.code}
-                  variant={isSelected ? 'contained' : 'outlined'}
-                  size="small"
-                  onClick={() => handleFieldChange('mealPlan', plan.code)}
-                  sx={{
-                    borderRadius: '20px',
-                    textTransform: 'none',
-                    fontWeight: 600,
-                    fontSize: '0.85rem',
-                    px: 2.5,
-                    py: 0.8,
-                    borderColor: isSelected ? '#059669' : '#CBD5E1',
-                    bgcolor: isSelected ? '#059669' : '#FFFFFF',
-                    color: isSelected ? '#FFFFFF' : '#334155',
-                    '&:hover': {
-                      bgcolor: isSelected ? '#047857' : '#F8FAFC',
-                      borderColor: '#059669'
-                    }
-                  }}
-                >
-                  {plan.label}
-                </Button>
-              );
-            })}
-          </Box>
-          <Typography variant="caption" sx={{ color: '#64748B', display: 'block', mt: 0.5 }}>
-            {MEAL_PLAN_SUBTEXTS[mealPlan] || 'Adds extra meal allowance per person'}
-          </Typography>
-        </Box>
-
-        <Box>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
             <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#1E293B', display: 'flex', alignItems: 'center', gap: 1 }}>
               Room Configuration
@@ -720,37 +956,91 @@ export default function ServiceModal({ open, onClose, onSave, type, initialData,
 
                 <Grid container spacing={2}>
                   <Grid item xs={12} sm={6}>
-                    <FormControl fullWidth size="small">
-                      <InputLabel>Room Type</InputLabel>
-                      <Select
-                        value={room.roomType || room.category || 'Super Deluxe'}
-                        label="Room Type"
-                        onChange={(e) => handleRoomTypeChange(idx, e.target.value)}
-                      >
-                        {ROOM_CATEGORIES.map((cat) => (
-                          <MenuItem key={cat} value={cat}>
-                            {cat}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
+                    {(() => {
+                      const hotelObj = HOTEL_DATABASE.find((h) => h.name === formData.title);
+                      const roomTypeOptions = hotelObj ? hotelObj.roomTypes : ROOM_CATEGORIES;
+                      return (
+                        <FormControl fullWidth size="small">
+                          <InputLabel>Room Type</InputLabel>
+                          <Select
+                            value={room.roomType || room.category || 'Super Deluxe'}
+                            label="Room Type"
+                            onChange={(e) => handleRoomTypeChange(idx, e.target.value)}
+                          >
+                            {roomTypeOptions.map((cat) => (
+                              <MenuItem key={cat} value={cat}>
+                                {cat}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                      );
+                    })()}
                   </Grid>
 
                   <Grid item xs={12} sm={6}>
-                    <FormControl fullWidth size="small">
-                      <InputLabel>Room View</InputLabel>
-                      <Select
-                        value={room.roomView || 'Pool View'}
-                        label="Room View"
-                        onChange={(e) => handleRoomChange(idx, 'roomView', e.target.value)}
-                      >
-                        {ROOM_VIEWS.map((view) => (
-                          <MenuItem key={view} value={view}>
-                            {view}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
+                    {(() => {
+                      const hotelObj = HOTEL_DATABASE.find((h) => h.name === formData.title);
+                      const viewOptions = hotelObj ? hotelObj.roomViews : ROOM_VIEWS;
+                      return (
+                        <FormControl fullWidth size="small">
+                          <InputLabel>Room View</InputLabel>
+                          <Select
+                            value={room.roomView || 'Pool View'}
+                            label="Room View"
+                            onChange={(e) => handleRoomChange(idx, 'roomView', e.target.value)}
+                          >
+                            {viewOptions.map((view) => (
+                              <MenuItem key={view} value={view}>
+                                {view}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                      );
+                    })()}
+                  </Grid>
+
+                  {/* Read-Only Included Meal Display — Non-selectable as per Room Type */}
+                  <Grid item xs={12}>
+                    {(() => {
+                      const roomType = room.roomType || room.category || 'Super Deluxe';
+                      const mealCode = getRoomIncludedMealPlan(formData.title, roomType);
+                      const mealLabel = MEAL_PLAN_LABELS[mealCode] || mealCode;
+                      const mealDesc = MEAL_PLAN_DESCRIPTIONS[mealCode] || 'Meals included in room rate';
+
+                      return (
+                        <Box sx={{ bgcolor: '#F8FAFC', p: 2, borderRadius: 2.5, border: '1px solid #E2E8F0', display: 'flex', flexDirection: 'column', gap: 1 }}>
+                          <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', letterSpacing: '0.4px', textTransform: 'uppercase' }}>
+                            Meal Plan Included for {roomType} (From Database — Non-selectable)
+                          </Typography>
+
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
+                            <Chip
+                              label={mealLabel}
+                              size="medium"
+                              sx={{
+                                bgcolor: '#059669',
+                                color: '#FFFFFF',
+                                fontWeight: 800,
+                                fontSize: '0.825rem',
+                                px: 1.5,
+                                py: 0.5,
+                                borderRadius: '8px'
+                              }}
+                            />
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, bgcolor: '#FFFFFF', px: 1.5, py: 0.8, borderRadius: 1.5, border: '1px solid #CBD5E1', flex: 1 }}>
+                              <Typography variant="caption" sx={{ fontWeight: 800, color: '#059669', bgcolor: '#ECFDF5', px: 1, py: 0.3, borderRadius: '4px', whiteSpace: 'nowrap' }}>
+                                Included Meals:
+                              </Typography>
+                              <Typography variant="body2" sx={{ color: '#1E293B', fontWeight: 600, fontSize: '0.85rem' }}>
+                                {mealDesc}
+                              </Typography>
+                            </Box>
+                          </Box>
+                        </Box>
+                      );
+                    })()}
                   </Grid>
 
                   <Grid item xs={12} sm={4}>
@@ -766,23 +1056,31 @@ export default function ServiceModal({ open, onClose, onSave, type, initialData,
 
                   <Grid item xs={12} sm={4}>
                     <TextField
-                      label="Adults / room"
+                      label={`Adults / room (max ${room.maxAdults || getRoomOccupancy(formData.title, room.roomType).maxAdults})`}
                       type="number"
                       size="small"
                       fullWidth
                       value={room.adultsPerRoom ?? 2}
-                      onChange={(e) => handleRoomChange(idx, 'adultsPerRoom', Math.max(1, parseInt(e.target.value || 1, 10)))}
+                      onChange={(e) => {
+                        const maxA = room.maxAdults || getRoomOccupancy(formData.title, room.roomType).maxAdults;
+                        handleRoomChange(idx, 'adultsPerRoom', Math.max(1, Math.min(maxA, parseInt(e.target.value || 1, 10))));
+                      }}
+                      helperText={`Max occupancy: ${room.maxAdults || getRoomOccupancy(formData.title, room.roomType).maxAdults} adults`}
                     />
                   </Grid>
 
                   <Grid item xs={12} sm={4}>
                     <TextField
-                      label="Children / room"
+                      label={`Children / room (max ${room.maxChildren ?? getRoomOccupancy(formData.title, room.roomType).maxChildren})`}
                       type="number"
                       size="small"
                       fullWidth
                       value={room.childrenPerRoom ?? 1}
-                      onChange={(e) => handleRoomChange(idx, 'childrenPerRoom', Math.max(0, parseInt(e.target.value || 0, 10)))}
+                      onChange={(e) => {
+                        const maxC = room.maxChildren ?? getRoomOccupancy(formData.title, room.roomType).maxChildren;
+                        handleRoomChange(idx, 'childrenPerRoom', Math.max(0, Math.min(maxC, parseInt(e.target.value || 0, 10))));
+                      }}
+                      helperText={`Max occupancy: ${room.maxChildren ?? getRoomOccupancy(formData.title, room.roomType).maxChildren} children`}
                     />
                   </Grid>
 
@@ -903,102 +1201,143 @@ export default function ServiceModal({ open, onClose, onSave, type, initialData,
     );
   };
 
+  const handleAddVehicle = () => {
+    setFormData((prev) => {
+      const current = prev.allocatedVehicles || [];
+      const newVehicle = {
+        id: `veh-${Date.now()}-${current.length}`,
+        vehicleType: 'Sedan',
+        vehicleCount: 1,
+        dailyRate: 2800,
+        capacity: 4
+      };
+      return { ...prev, allocatedVehicles: [...current, newVehicle] };
+    });
+  };
+
+  const handleRemoveVehicle = (index) => {
+    setFormData((prev) => {
+      const current = prev.allocatedVehicles || [];
+      if (current.length <= 1) return prev;
+      const updated = current.filter((_, i) => i !== index);
+      return { ...prev, allocatedVehicles: updated };
+    });
+  };
+
+  const handleVehicleChange = (index, field, value) => {
+    setFormData((prev) => {
+      const current = [...(prev.allocatedVehicles || [])];
+      current[index] = { ...current[index], [field]: value };
+      return { ...prev, allocatedVehicles: current };
+    });
+  };
+
+  const handleVehicleTypeChange = (index, newType) => {
+    setFormData((prev) => {
+      const current = [...(prev.allocatedVehicles || [])];
+      const match = VEHICLE_OPTIONS.find((v) => v.type === newType);
+      const rate = match ? match.rate : (current[index]?.dailyRate || 3500);
+      const capacity = match ? match.capacity : 4;
+      current[index] = {
+        ...current[index],
+        vehicleType: newType,
+        dailyRate: rate,
+        capacity
+      };
+      return { ...prev, allocatedVehicles: current };
+    });
+  };
+
   const renderTransportForm = () => {
+    const locationOptions = getTripLocationOptions(destination, formData.title);
+    const vehicles = formData.allocatedVehicles && formData.allocatedVehicles.length > 0
+      ? formData.allocatedVehicles
+      : [{
+          id: 'veh-0',
+          vehicleType: formData.vehicleType || 'SUV',
+          vehicleCount: formData.vehicleCount || 1,
+          dailyRate: formData.dailyRate || 3500
+        }];
+
     return (
       <Grid container spacing={2.5}>
-        <Grid item xs={12} sm={12}>
-          <TextField
-            label="Service Title"
-            fullWidth
-            required
+        <Grid item xs={12}>
+          <Autocomplete
+            freeSolo
+            options={TRANSPORT_TITLE_PRESETS}
             value={formData.title || ''}
-            onChange={(e) => handleFieldChange('title', e.target.value)}
-            placeholder="e.g. Private Airport Pickup & Sightseeing Cab"
+            onChange={(e, newValue) => {
+              handleFieldChange('title', newValue || '');
+            }}
+            onInputChange={(e, newInputValue, reason) => {
+              if (reason === 'input') {
+                handleFieldChange('title', newInputValue);
+              }
+            }}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Service Title *"
+                fullWidth
+                required
+                placeholder="Select or type e.g. Private Airport Pickup & Sightseeing Cab"
+              />
+            )}
           />
         </Grid>
 
+        {/* Pickup Location Dropdown (Dynamic based on trip destination & locations) */}
         <Grid item xs={12} sm={6}>
-          <TextField
-            label="From (Pickup Location)"
-            fullWidth
-            required
+          <Autocomplete
+            freeSolo
+            options={locationOptions}
             value={formData.fromLocation || ''}
-            onChange={(e) => handleFieldChange('fromLocation', e.target.value)}
-            placeholder="e.g. Airport / Hotel / Station"
+            onChange={(e, newValue) => handleFieldChange('fromLocation', newValue || '')}
+            onInputChange={(e, newInputValue, reason) => {
+              if (reason === 'input') handleFieldChange('fromLocation', newInputValue);
+            }}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="From (Pickup Location) *"
+                fullWidth
+                required
+                placeholder="Select pickup location or type custom"
+              />
+            )}
           />
         </Grid>
 
+        {/* Drop Location Dropdown (Dynamic based on trip destination & locations) */}
         <Grid item xs={12} sm={6}>
-          <TextField
-            label="To (Drop Location)"
-            fullWidth
-            required
+          <Autocomplete
+            freeSolo
+            options={locationOptions}
             value={formData.toLocation || ''}
-            onChange={(e) => handleFieldChange('toLocation', e.target.value)}
-            placeholder="e.g. Resort / Tourist Landmark"
+            onChange={(e, newValue) => handleFieldChange('toLocation', newValue || '')}
+            onInputChange={(e, newInputValue, reason) => {
+              if (reason === 'input') handleFieldChange('toLocation', newInputValue);
+            }}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="To (Drop Location) *"
+                fullWidth
+                required
+                placeholder="Select drop location or type custom"
+              />
+            )}
           />
         </Grid>
 
         <Grid item xs={12} sm={6}>
-          <FormControl fullWidth required>
-            <InputLabel>Vehicle Type & Occupancy</InputLabel>
-            <Select
-              value={formData.vehicleType || 'SUV'}
-              label="Vehicle Type & Occupancy"
-              onChange={(e) => {
-                const selectedType = e.target.value;
-                const match = VEHICLE_OPTIONS.find((v) => v.type === selectedType);
-                if (match) {
-                  const reqCount = Math.ceil(totalPax / match.capacity);
-                  setFormData((prev) => ({
-                    ...prev,
-                    vehicleType: match.type,
-                    dailyRate: match.rate,
-                    vehicleCount: reqCount
-                  }));
-                }
-              }}
-            >
-              {VEHICLE_OPTIONS.map((v) => (
-                <MenuItem key={v.type} value={v.type}>
-                  {v.label} — ₹{v.rate.toLocaleString()}/day
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Grid>
-
-        <Grid item xs={12} sm={3}>
           <TextField
-            label="No. of Vehicles"
-            type="number"
-            fullWidth
-            required
-            value={formData.vehicleCount || 1}
-            onChange={(e) => handleFieldChange('vehicleCount', Math.max(1, parseInt(e.target.value || 1, 10)))}
-            helperText={`Auto-calculated for ${totalPax} Pax`}
-          />
-        </Grid>
-
-        <Grid item xs={12} sm={3}>
-          <TextField
-            label="Days / Rides"
+            label="Days / Rides *"
             type="number"
             fullWidth
             required
             value={formData.days || 1}
             onChange={(e) => handleFieldChange('days', Math.max(1, parseInt(e.target.value || 1, 10)))}
-          />
-        </Grid>
-
-        <Grid item xs={12} sm={6}>
-          <TextField
-            label="Rate per Vehicle / Day (₹)"
-            type="number"
-            fullWidth
-            required
-            value={formData.dailyRate || 0}
-            onChange={(e) => handleFieldChange('dailyRate', Math.max(0, parseFloat(e.target.value || 0)))}
           />
         </Grid>
 
@@ -1022,6 +1361,110 @@ export default function ServiceModal({ open, onClose, onSave, type, initialData,
             value={formData.dropTime || ''}
             onChange={(e) => handleFieldChange('dropTime', e.target.value)}
           />
+        </Grid>
+
+        {/* Multi-Vehicle Configuration */}
+        <Grid item xs={12}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5, mt: 1 }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#1E293B' }}>
+              Vehicle Fleet Allocation ({vehicles.length} Type{vehicles.length > 1 ? 's' : ''})
+            </Typography>
+            <Button
+              variant="text"
+              size="small"
+              startIcon={<MdAdd />}
+              onClick={handleAddVehicle}
+              sx={{ fontWeight: 700, color: '#059669', textTransform: 'none' }}
+            >
+              + Add Another Vehicle
+            </Button>
+          </Box>
+
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {vehicles.map((veh, idx) => (
+              <Paper
+                key={veh.id || idx}
+                variant="outlined"
+                sx={{
+                  p: 2.5,
+                  bgcolor: '#F8FAFC',
+                  borderRadius: 3,
+                  border: '1px solid #E2E8F0',
+                  position: 'relative'
+                }}
+              >
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#475569' }}>
+                    Vehicle {idx + 1}
+                  </Typography>
+                  {vehicles.length > 1 && (
+                    <IconButton size="small" color="error" onClick={() => handleRemoveVehicle(idx)} title="Remove Vehicle">
+                      <MdDeleteOutline size={18} />
+                    </IconButton>
+                  )}
+                </Box>
+
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={6}>
+                    <Autocomplete
+                      freeSolo
+                      options={VEHICLE_OPTIONS.map((v) => v.type)}
+                      value={veh.vehicleType || ''}
+                      onChange={(e, newValue) => handleVehicleTypeChange(idx, newValue || '')}
+                      onInputChange={(e, newInputValue, reason) => {
+                        if (reason === 'input') handleVehicleChange(idx, 'vehicleType', newInputValue);
+                      }}
+                      renderOption={(props, option) => {
+                        const match = VEHICLE_OPTIONS.find((v) => v.type === option);
+                        return (
+                          <li {...props} key={option}>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+                              <span>{match ? match.label : option}</span>
+                              {match && <span style={{ color: '#64748B', fontSize: '0.85rem' }}>— ₹{match.rate.toLocaleString()}/day</span>}
+                            </Box>
+                          </li>
+                        );
+                      }}
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label="Vehicle Type *"
+                          size="small"
+                          fullWidth
+                          required
+                          placeholder="Select vehicle type"
+                        />
+                      )}
+                    />
+                  </Grid>
+
+                  <Grid item xs={12} sm={3}>
+                    <TextField
+                      label="No. of Vehicles *"
+                      type="number"
+                      size="small"
+                      fullWidth
+                      required
+                      value={veh.vehicleCount || 1}
+                      onChange={(e) => handleVehicleChange(idx, 'vehicleCount', Math.max(1, parseInt(e.target.value || 1, 10)))}
+                    />
+                  </Grid>
+
+                  <Grid item xs={12} sm={3}>
+                    <TextField
+                      label="Rate / Vehicle / Day (₹) *"
+                      type="number"
+                      size="small"
+                      fullWidth
+                      required
+                      value={veh.dailyRate || 0}
+                      onChange={(e) => handleVehicleChange(idx, 'dailyRate', Math.max(0, parseFloat(e.target.value || 0)))}
+                    />
+                  </Grid>
+                </Grid>
+              </Paper>
+            ))}
+          </Box>
         </Grid>
       </Grid>
     );
@@ -1258,30 +1701,7 @@ export default function ServiceModal({ open, onClose, onSave, type, initialData,
             </Grid>
           )}
 
-          {/* Image URL — available for every service type */}
-          <Box sx={{ mt: 2.5, p: 2, background: '#F8FAFC', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
-            <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#334155', mb: 1 }}>
-              Service Image (Optional)
-            </Typography>
-            <TextField
-              label="Image URL"
-              fullWidth
-              size="small"
-              value={formData.imageUrl || ''}
-              onChange={(e) => handleFieldChange('imageUrl', e.target.value)}
-              placeholder="Paste image URL here (e.g. https://...)"
-            />
-            {formData.imageUrl && (
-              <Box sx={{ mt: 1.5 }}>
-                <img
-                  src={formData.imageUrl}
-                  alt="Service preview"
-                  style={{ width: '100%', maxHeight: '140px', objectFit: 'cover', borderRadius: '10px', border: '1px solid #E2E8F0' }}
-                  onError={(e) => { e.target.style.display = 'none'; }}
-                />
-              </Box>
-            )}
-          </Box>
+
         </Box>
       </DialogContent>
 

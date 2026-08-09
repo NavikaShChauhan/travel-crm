@@ -36,10 +36,19 @@ import {
   MdClose,
   MdExpandMore,
   MdExpandLess,
-  MdExplore
+  MdExplore,
+  MdAssignment,
+  MdWork,
+  MdShield,
+  MdRestaurant,
+  MdDeleteOutline,
+  MdEdit,
+  MdArrowBack,
+  MdArrowForward
 } from 'react-icons/md';
 
 import ServiceModal from '../components/ServiceModals';
+import PdfTemplateModal from '../components/PdfTemplateModal';
 import { create, update, getById } from '@/services/itinerary.service';
 import { formatCurrency } from '@utils/formatters';
 import { getDestinationOptions } from '@/constants/destinations.data';
@@ -81,10 +90,40 @@ const DEFAULT_TERMS_POLICIES = [
     id: 'block-cancellation',
     title: 'Cancellation Policy',
     items: [
-      'Cancellation charges will apply as per hotel, transport and supplier policies.'
+      'Cancellation requests must be submitted in writing.',
+      'Retention charges will apply as per hotel, airline, supplier and company cancellation policy.',
+      'No refund for unused services or unutilized nights.'
     ]
   }
 ];
+
+// Helper to render icons for Terms & Policies items matching screenshot design
+const getTermsItemIcon = (text = '') => {
+  const lower = text.toLowerCase();
+  if (lower.includes('hotel') || lower.includes('accommodation') || lower.includes('room') || lower.includes('stay') || lower.includes('package') || lower.includes('pack-age')) {
+    return <MdHotel size={16} style={{ color: '#B45309' }} />;
+  }
+  if (lower.includes('meal') || lower.includes('breakfast') || lower.includes('dinner') || lower.includes('food') || lower.includes('plan')) {
+    return <MdRestaurant size={16} style={{ color: '#B45309' }} />;
+  }
+  if (lower.includes('transfer') || lower.includes('sightseeing') || lower.includes('bus') || lower.includes('cab') || lower.includes('car') || lower.includes('vehicle')) {
+    return <MdDirectionsBus size={16} style={{ color: '#B45309' }} />;
+  }
+  return <MdAssignment size={16} style={{ color: '#B45309' }} />;
+};
+
+// Helper to render icons for Terms & Policies tabs matching screenshot design
+const getTermsTabIcon = (title = '', isActive = false) => {
+  const lower = title.toLowerCase();
+  const color = isActive ? '#B45309' : '#4F46E5';
+  if (lower.includes('inclusion')) {
+    return <MdWork size={15} style={{ color }} />;
+  }
+  if (lower.includes('exclusion')) {
+    return <MdShield size={15} style={{ color }} />;
+  }
+  return <MdAssignment size={15} style={{ color }} />;
+};
 
 const SERVICE_ICONS = {
   Hotel: MdHotel,
@@ -143,6 +182,10 @@ export default function ItineraryBuilderPage() {
   const [status, setStatus] = useState('Draft');
   const [coverImage, setCoverImage] = useState(PRESET_COVERS[0].url);
 
+  // Discount States
+  const [discountType, setDiscountType] = useState('percentage'); // 'percentage' | 'value'
+  const [discountValue, setDiscountValue] = useState(0);
+
   // Travelers breakdown
   const [adults, setAdults] = useState(2);
   const [children, setChildren] = useState(0);
@@ -157,11 +200,13 @@ export default function ItineraryBuilderPage() {
   const [termsExpanded, setTermsExpanded] = useState(true);
   const [termsModalOpen, setTermsModalOpen] = useState(false);
   const [activeTermsTab, setActiveTermsTab] = useState(0);
+  const [termsPage, setTermsPage] = useState(1);
   const [editingBlockId, setEditingBlockId] = useState(null);
   const [blockTitle, setBlockTitle] = useState('');
   const [blockItemsText, setBlockItemsText] = useState('');
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [blockToDelete, setBlockToDelete] = useState(null);
+  const [pdfModalOpen, setPdfModalOpen] = useState(false);
 
   // Compute trip cost breakdown dynamically
   const costBreakdown = useMemo(() => {
@@ -197,6 +242,28 @@ export default function ItineraryBuilderPage() {
     const total = accommodation + sightseeing + transport + meals + other;
     return { accommodation, sightseeing, transport, meals, other, total };
   }, [services]);
+
+  const originalAmount = costBreakdown.total;
+
+  const calculatedDiscount = useMemo(() => {
+    const val = Number(discountValue) || 0;
+    if (val <= 0) return 0;
+    if (discountType === 'percentage') {
+      const calc = (originalAmount * val) / 100;
+      return Math.min(originalAmount, Math.max(0, calc));
+    } else {
+      return Math.min(originalAmount, Math.max(0, val));
+    }
+  }, [originalAmount, discountType, discountValue]);
+
+  const finalAmount = useMemo(() => {
+    return Math.max(0, originalAmount - calculatedDiscount);
+  }, [originalAmount, calculatedDiscount]);
+
+  // Sync pricing state with calculated final amount
+  useEffect(() => {
+    setAmount(finalAmount);
+  }, [finalAmount]);
 
   // Active UI States
   const [activeDay, setActiveDay] = useState(1);
@@ -263,6 +330,8 @@ export default function ItineraryBuilderPage() {
           setAdults(item.adults ?? 2);
           setChildren(item.children ?? 0);
           setInfants(item.infants ?? 0);
+          setDiscountType(item.discountType || 'percentage');
+          setDiscountValue(item.discountValue || 0);
           setServices(item.services && item.services.length > 0 ? item.services : [
             {
               id: 'srv-104',
@@ -495,11 +564,61 @@ export default function ItineraryBuilderPage() {
   const saveItineraryUpdates = async (updates) => {
     try {
       const current = await getById(id);
-      const payload = { ...current, ...updates };
+      const payload = {
+        ...current,
+        discountType,
+        discountValue,
+        discountAmount: calculatedDiscount,
+        originalAmount,
+        amount: finalAmount,
+        ...updates
+      };
       await update(id, payload);
     } catch (e) {
       console.error('Failed to auto-save itinerary updates:', e);
     }
+  };
+
+  const handleDiscountTypeChange = (newType) => {
+    setDiscountType(newType);
+    const val = Number(discountValue) || 0;
+    let discAmt = 0;
+    if (val > 0) {
+      if (newType === 'percentage') {
+        discAmt = Math.min(originalAmount, Math.max(0, (originalAmount * val) / 100));
+      } else {
+        discAmt = Math.min(originalAmount, Math.max(0, val));
+      }
+    }
+    const newFinal = Math.max(0, originalAmount - discAmt);
+    saveItineraryUpdates({
+      discountType: newType,
+      discountValue: val,
+      discountAmount: discAmt,
+      originalAmount,
+      amount: newFinal
+    });
+  };
+
+  const handleDiscountValueChange = (valStr) => {
+    const val = Math.max(0, parseFloat(valStr) || 0);
+    setDiscountValue(val);
+    let discAmt = 0;
+    if (val > 0) {
+      if (discountType === 'percentage') {
+        discAmt = Math.min(originalAmount, Math.max(0, (originalAmount * val) / 100));
+      } else {
+        discAmt = Math.min(originalAmount, Math.max(0, val));
+      }
+    }
+    const newFinal = Math.max(0, originalAmount - discAmt);
+    saveItineraryUpdates({
+      discountType,
+      discountValue: val,
+      discountAmount: discAmt,
+      originalAmount,
+      amount: newFinal
+    });
   };
 
   // Trigger Cover Image Dialog
@@ -985,9 +1104,9 @@ export default function ItineraryBuilderPage() {
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '15px', marginBottom: '20px' }}>
               <div>
-                <label className="itin-form-label">Number of travelers</label>
+                <label className="itin-form-label">Adults (12+ yrs)</label>
                 <input
                   type="number"
                   className="itin-form-input"
@@ -996,8 +1115,31 @@ export default function ItineraryBuilderPage() {
                 />
               </div>
               <div>
-                <label className="itin-form-label">Estimated amount</label>
-                <input type="text" className="itin-form-input" disabled value="₹ 0" />
+                <label className="itin-form-label">Children (2-11 yrs)</label>
+                <input
+                  type="number"
+                  className="itin-form-input"
+                  value={children}
+                  onChange={(e) => setChildren(Math.max(0, parseInt(e.target.value || 0, 10)))}
+                />
+              </div>
+              <div>
+                <label className="itin-form-label">Infants (0-2 yrs)</label>
+                <input
+                  type="number"
+                  className="itin-form-input"
+                  value={infants}
+                  onChange={(e) => setInfants(Math.max(0, parseInt(e.target.value || 0, 10)))}
+                />
+              </div>
+              <div>
+                <label className="itin-form-label">Total Travelers</label>
+                <input
+                  type="text"
+                  className="itin-form-input"
+                  disabled
+                  value={`${adults + children + infants} Pax`}
+                />
               </div>
             </div>
 
@@ -1035,13 +1177,12 @@ export default function ItineraryBuilderPage() {
         <div className="ridgeline-top-bar">
           <div className="ridgeline-brand">
             <MdExplore size={24} style={{ color: '#153328' }} />
-            RIDGELINE JOURNEYS
           </div>
           <div className="ridgeline-top-actions">
-            <button className="btn-ridgeline-outline" onClick={() => navigate('/itinerary')}>
+            <button className="btn-ridgeline-outline" onClick={() => setPdfModalOpen(true)}>
               Preview
             </button>
-            <button className="btn-ridgeline-outline" onClick={handleExportPDF}>
+            <button className="btn-ridgeline-outline" onClick={() => setPdfModalOpen(true)}>
               Export PDF
             </button>
             <button className="btn-ridgeline-solid" onClick={handleOpenEditBasic}>
@@ -1055,36 +1196,34 @@ export default function ItineraryBuilderPage() {
           className="ridgeline-hero-banner"
           style={{ backgroundImage: `url(${coverImage || PRESET_COVERS[0].url})` }}
         >
-          <div className="ridgeline-hero-left">
+          {/* Top Section: Title & Subtitle */}
+          <div className="ridgeline-hero-top">
             <div className="ridgeline-hero-subtitle">
-              CUSTOM JOURNEY &middot; {destination ? destination.split(',')[0].toUpperCase() : 'HIMACHAL PRADESH'}
+              TRIP ITINERARY &bull; {name || 'CUSTOM TOUR'}
             </div>
-            <h1 className="ridgeline-hero-title">
-              Four nights through pine <em>and</em> high passes.
+            <h1 className="ridgeline-hero-title" style={{ margin: 0 }}>
+              {destination || 'Himachal Pradesh'}
             </h1>
+          </div>
+
+          {/* Bottom Section: Basic details of trip (Duration/Days, No. of Travelers, Trip Type, Customer) */}
+          <div className="ridgeline-hero-bottom" style={{ marginTop: 'auto', paddingTop: '24px' }}>
             <div className="ridgeline-hero-meta">
               <div className="ridgeline-meta-item">
-                <span className="ridgeline-meta-label">ROUTE</span>
+                <span className="ridgeline-meta-label">DURATION</span>
+                <span className="ridgeline-meta-value">{durationNights} Nights • {durationDays} Days</span>
+              </div>
+              <div className="ridgeline-meta-item">
+                <span className="ridgeline-meta-label">NO. OF TRAVELLERS</span>
                 <span className="ridgeline-meta-value">
-                  {days.length > 0
-                    ? days.map((d) => d.title || destination).filter((v, i, a) => a.indexOf(v) === i).join(' → ')
-                    : 'Shimla → Manali → Dharamshala'}
+                  {adults} {adults === 1 ? 'Adult' : 'Adults'}{children > 0 ? `, ${children} ${children === 1 ? 'Child' : 'Children'}` : ''}{infants > 0 ? `, ${infants} ${infants === 1 ? 'Infant' : 'Infants'}` : ''}
                 </span>
               </div>
               <div className="ridgeline-meta-item">
-                <span className="ridgeline-meta-label">TRAVELLERS</span>
-                <span className="ridgeline-meta-value">{adults} Adults{children > 0 ? `, ${children} Children` : ''}</span>
-              </div>
-              <div className="ridgeline-meta-item">
-                <span className="ridgeline-meta-label">DURATION</span>
-                <span className="ridgeline-meta-value">{durationDays} Days &middot; {durationNights} Nights</span>
+                <span className="ridgeline-meta-label">TRIP TYPE</span>
+                <span className="ridgeline-meta-value">{type || 'Family'}</span>
               </div>
             </div>
-          </div>
-
-          <div className="ridgeline-hero-right">
-            <div className="ridgeline-total-label">TRIP TOTAL</div>
-            <div className="ridgeline-total-amount">{formatCurrency(amount || costBreakdown.total || 68420)}</div>
           </div>
         </div>
 
@@ -1228,6 +1367,121 @@ export default function ItineraryBuilderPage() {
             >
               + Add another service to Day {activeDay}
             </button>
+
+            {/* Terms & Policies Section — Positioned under + Add another service button */}
+            <div className="ridgeline-side-card terms-policy-card" style={{ marginTop: '32px' }}>
+              {/* Top Header Row with Icon, Title, Subtitle, Edit & Add Buttons */}
+              <div className="terms-hdr-row">
+                <div className="terms-hdr-left">
+                  <div className="terms-hdr-icon-box">
+                    <MdAssignment size={18} style={{ color: '#B45309' }} />
+                  </div>
+                  <div>
+                    <h3 className="terms-hdr-title">Terms &amp; Policies</h3>
+                    <p className="terms-hdr-subtitle">Manage accommodation and service rules</p>
+                  </div>
+                </div>
+
+                <div className="terms-hdr-actions">
+                  {termsAndPolicies.length > 0 && (
+                    <button
+                      className="terms-btn-edit"
+                      onClick={() => handleOpenEditTermsBlock(termsAndPolicies[activeTermsTab] || termsAndPolicies[0])}
+                    >
+                      <MdEdit size={16} />
+                      Edit
+                    </button>
+                  )}
+                  <button className="terms-btn-add" onClick={handleOpenAddTermsBlock}>
+                    + Add
+                  </button>
+                </div>
+              </div>
+
+              {/* Navigation Tabs (Inclusions, Exclusions, etc.) */}
+              {termsAndPolicies.length > 0 && (
+                <>
+                  <div className="ridgeline-terms-nav-tabs">
+                    {termsAndPolicies.map((block, idx) => {
+                      const isActive = activeTermsTab === idx;
+                      return (
+                        <button
+                          key={block.id || idx}
+                          className={`ridgeline-terms-tab-item ${isActive ? 'active' : ''}`}
+                          onClick={() => {
+                            setActiveTermsTab(idx);
+                            setTermsPage(1);
+                          }}
+                        >
+                          {getTermsTabIcon(block.title, isActive)}
+                          <span>{block.title}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Active Policy Block Content (Warm Beige Container Box) */}
+                  {termsAndPolicies[activeTermsTab] && (() => {
+                    const currentBlock = termsAndPolicies[activeTermsTab];
+                    const items = currentBlock.items || [];
+                    const ITEMS_PER_PAGE = 3;
+                    const totalPages = Math.max(1, Math.ceil(items.length / ITEMS_PER_PAGE));
+                    const safePage = Math.min(termsPage, totalPages);
+                    const visibleItems = items.slice((safePage - 1) * ITEMS_PER_PAGE, safePage * ITEMS_PER_PAGE);
+
+                    return (
+                      <div>
+                        {/* Policy Items List in Warm Beige Card Container */}
+                        <div className="terms-content-beige-card">
+                          {visibleItems.map((itemText, idx) => (
+                            <div key={idx} className="terms-item-row">
+                              <div className="terms-item-amber-bar" />
+                              <div className="terms-item-icon-circle">
+                                {getTermsItemIcon(itemText)}
+                              </div>
+                              <span className="terms-item-text">{itemText}</span>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Footer Controls: Pagination Pills & Delete Block Pill Button */}
+                        <div className="terms-footer-container">
+                          <div className="terms-pagination-controls">
+                            <button
+                              disabled={safePage === 1}
+                              onClick={() => setTermsPage(prev => Math.max(prev - 1, 1))}
+                              className="terms-page-btn"
+                            >
+                              &larr; Prev
+                            </button>
+                            <span className="terms-page-indicator">
+                              Page {safePage} of {totalPages}
+                            </span>
+                            <button
+                              disabled={safePage >= totalPages}
+                              onClick={() => setTermsPage(prev => Math.min(prev + 1, totalPages))}
+                              className="terms-page-btn"
+                            >
+                              Next &rarr;
+                            </button>
+                          </div>
+
+                          <div>
+                            <button
+                              className="btn-delete-terms-block-pill"
+                              onClick={() => handleDeleteTermsBlock(currentBlock)}
+                            >
+                              <MdDeleteOutline size={18} />
+                              DELETE BLOCK
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </>
+              )}
+            </div>
           </div>
 
           {/* Right Column: Sidebar Cards */}
@@ -1261,65 +1515,103 @@ export default function ItineraryBuilderPage() {
                     <span>{formatCurrency(costBreakdown.other)}</span>
                   </div>
                 )}
-                <div className="ridgeline-cost-row total-line">
-                  <span className="ridgeline-cost-lbl-total">Total</span>
-                  <span className="ridgeline-cost-val-total">{formatCurrency(amount || costBreakdown.total)}</span>
+                {/* Subtotal / Original Price */}
+                <div className="ridgeline-cost-row subtotal-line" style={{ paddingTop: '8px', borderTop: '1px dashed #CBD5E1', fontWeight: 600 }}>
+                  <span style={{ color: '#475569', fontSize: '0.85rem' }}>Subtotal (Original)</span>
+                  <span style={{ color: '#334155', fontSize: '0.85rem' }}>{formatCurrency(originalAmount)}</span>
                 </div>
-              </div>
-            </div>
 
-            {/* Card 2: Terms & Policies with ADD/EDIT Option */}
-            <div className="ridgeline-side-card">
-              <div className="ridgeline-side-card-hdr">
-                <h3 className="ridgeline-side-card-title">TERMS &amp; POLICIES</h3>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  {termsAndPolicies.length > 0 && (
-                    <button
-                      className="btn-side-card-action"
-                      onClick={() => handleOpenEditTermsBlock(termsAndPolicies[activeTermsTab] || termsAndPolicies[0])}
-                    >
-                      EDIT
-                    </button>
-                  )}
-                  <button className="btn-side-card-action" onClick={handleOpenAddTermsBlock}>
-                    + ADD
-                  </button>
-                </div>
-              </div>
-
-              {termsAndPolicies.length > 0 && (
-                <>
-                  <div className="ridgeline-terms-nav-tabs">
-                    {termsAndPolicies.map((block, idx) => (
+                {/* Discount Controls */}
+                <div className="discount-config-box" style={{ marginTop: '10px', padding: '10px 12px', background: '#F8FAFC', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Discount</span>
+                    <div style={{ display: 'inline-flex', background: '#E2E8F0', borderRadius: '6px', padding: '2px' }}>
                       <button
-                        key={block.id || idx}
-                        className={`ridgeline-terms-tab-item ${activeTermsTab === idx ? 'active' : ''}`}
-                        onClick={() => setActiveTermsTab(idx)}
+                        type="button"
+                        onClick={() => handleDiscountTypeChange('percentage')}
+                        style={{
+                          padding: '2px 8px',
+                          fontSize: '0.72rem',
+                          fontWeight: 700,
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          background: discountType === 'percentage' ? '#059669' : 'transparent',
+                          color: discountType === 'percentage' ? '#FFFFFF' : '#64748B',
+                          transition: 'all 0.15s ease'
+                        }}
                       >
-                        {block.title}
+                        % Percent
                       </button>
-                    ))}
+                      <button
+                        type="button"
+                        onClick={() => handleDiscountTypeChange('value')}
+                        style={{
+                          padding: '2px 8px',
+                          fontSize: '0.72rem',
+                          fontWeight: 700,
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          background: discountType === 'value' ? '#059669' : 'transparent',
+                          color: discountType === 'value' ? '#FFFFFF' : '#64748B',
+                          transition: 'all 0.15s ease'
+                        }}
+                      >
+                        ₹ Value
+                      </button>
+                    </div>
                   </div>
 
-                  {termsAndPolicies[activeTermsTab] && (
-                    <div style={{ overflow: 'hidden' }}>
-                      <ul className="ridgeline-bullet-list">
-                        {(termsAndPolicies[activeTermsTab].items || []).map((item, idx) => (
-                          <li key={idx}>{item}</li>
-                        ))}
-                      </ul>
-                      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '12px' }}>
-                        <button
-                          style={{ background: 'transparent', border: 'none', color: '#DC2626', fontSize: '0.72rem', fontWeight: 600, cursor: 'pointer', letterSpacing: '0.5px', textTransform: 'uppercase' }}
-                          onClick={() => handleDeleteTermsBlock(termsAndPolicies[activeTermsTab])}
-                        >
-                          Delete Block
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </>
-              )}
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <input
+                      type="number"
+                      min="0"
+                      max={discountType === 'percentage' ? 100 : originalAmount}
+                      placeholder={discountType === 'percentage' ? 'Discount %' : 'Discount ₹'}
+                      value={discountValue || ''}
+                      onChange={(e) => handleDiscountValueChange(e.target.value)}
+                      style={{
+                        flex: 1,
+                        padding: '5px 8px',
+                        fontSize: '0.85rem',
+                        fontWeight: 600,
+                        borderRadius: '6px',
+                        border: '1px solid #CBD5E1',
+                        outline: 'none'
+                      }}
+                    />
+                    {calculatedDiscount > 0 && (
+                      <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#DC2626', whiteSpace: 'nowrap' }}>
+                        - {formatCurrency(calculatedDiscount)}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Final Total Line */}
+                <div className="ridgeline-cost-row total-line" style={{ marginTop: '10px', paddingTop: '10px', borderTop: '2px solid #E2E8F0' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span className="ridgeline-cost-lbl-total">Total Amount</span>
+                    {calculatedDiscount > 0 && (
+                      <span style={{ fontSize: '0.72rem', color: '#059669', fontWeight: 700 }}>
+                        {discountType === 'percentage' ? `${discountValue}% OFF Applied` : `Saved ${formatCurrency(calculatedDiscount)}`}
+                      </span>
+                    )}
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                    {calculatedDiscount > 0 && (
+                      <span style={{ textDecoration: 'line-through', color: '#94A3B8', fontSize: '0.82rem', fontWeight: 600 }}>
+                        {formatCurrency(originalAmount)}
+                      </span>
+                    )}
+                    <span className="ridgeline-cost-val-total" style={{ color: calculatedDiscount > 0 ? '#059669' : '#0F172A' }}>
+                      {formatCurrency(finalAmount)}
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Card 3: Cover Image */}
@@ -1434,7 +1726,7 @@ export default function ItineraryBuilderPage() {
               </Select>
             </FormControl>
           </Box>
-          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px', mt: 2.5 }}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr 1fr', gap: '16px', mt: 2.5 }}>
             <FormControl fullWidth>
               <InputLabel>Trip Type</InputLabel>
               <Select
@@ -1448,18 +1740,25 @@ export default function ItineraryBuilderPage() {
               </Select>
             </FormControl>
             <TextField
-              label="Adults"
+              label="Adults (12+ yrs)"
               type="number"
               fullWidth
               value={tempAdults}
               onChange={(e) => setTempAdults(Math.max(1, parseInt(e.target.value || 1, 10)))}
             />
             <TextField
-              label="Children"
+              label="Children (2-11 yrs)"
               type="number"
               fullWidth
               value={tempChildren}
               onChange={(e) => setTempChildren(Math.max(0, parseInt(e.target.value || 0, 10)))}
+            />
+            <TextField
+              label="Infants (0-2 yrs)"
+              type="number"
+              fullWidth
+              value={tempInfants}
+              onChange={(e) => setTempInfants(Math.max(0, parseInt(e.target.value || 0, 10)))}
             />
           </Box>
           <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', mt: 2.5 }}>
@@ -1503,6 +1802,7 @@ export default function ItineraryBuilderPage() {
         type={activeModalType}
         initialData={editingServiceIndex !== null ? services[editingServiceIndex] : null}
         travelers={{ total: adults + children + infants, adults, children, infants }}
+        destination={destination}
         onClose={() => {
           setActiveModalType(null);
           setEditingServiceIndex(null);
@@ -1611,6 +1911,34 @@ export default function ItineraryBuilderPage() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* 11. PDF Template Selection Modal */}
+      <PdfTemplateModal
+        open={pdfModalOpen}
+        onClose={() => setPdfModalOpen(false)}
+        itineraryData={{
+          id: itinId,
+          name,
+          customerName,
+          phone,
+          destination,
+          startDate,
+          endDate,
+          adults,
+          children,
+          infants,
+          originalAmount,
+          discountType,
+          discountValue,
+          discountAmount: calculatedDiscount,
+          amount: finalAmount,
+          description,
+          coverImage,
+          days,
+          services,
+          termsAndPolicies
+        }}
+      />
     </div>
   );
 }

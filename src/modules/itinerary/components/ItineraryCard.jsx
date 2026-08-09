@@ -78,6 +78,10 @@ export default function ItineraryCard({ itinerary, onDelete, onEditBasic, index 
     children = 1,
     infants = 0,
     amount = 18500,
+    originalAmount,
+    discountAmount = 0,
+    discountType = 'percentage',
+    discountValue = 0,
     travelDates = '15 - 18 Aug 2026',
     includedServices = 'Hotel • Cab • Flight'
   } = itinerary;
@@ -192,10 +196,22 @@ export default function ItineraryCard({ itinerary, onDelete, onEditBasic, index 
         {/* Price Row Banner */}
         <div
           className="itin-card-price-banner"
-          style={{ backgroundColor: theme.priceBg, color: theme.priceColor }}
+          style={{ backgroundColor: theme.priceBg, color: theme.priceColor, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
           onClick={handleTitleClick}
         >
-          <span className="price-val">{formatCurrency(amount)}</span>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', flexWrap: 'wrap' }}>
+            {(discountAmount > 0 || (originalAmount && originalAmount > amount)) && (
+              <span style={{ textDecoration: 'line-through', opacity: 0.65, fontSize: '0.8rem', fontWeight: 600 }}>
+                {formatCurrency(originalAmount || (amount + discountAmount))}
+              </span>
+            )}
+            <span className="price-val">{formatCurrency(amount)}</span>
+            {(discountAmount > 0 || (originalAmount && originalAmount > amount)) && (
+              <span style={{ fontSize: '0.68rem', fontWeight: 800, background: '#DC2626', color: '#FFFFFF', padding: '1px 6px', borderRadius: '4px' }}>
+                {discountType === 'percentage' && discountValue ? `${discountValue}% OFF` : 'SAVED'}
+              </span>
+            )}
+          </div>
           <div className="price-arrow-circle" style={{ color: theme.priceColor }}>
             <MdArrowForward size={16} />
           </div>
