@@ -133,7 +133,7 @@ export const MOCK_ITINERARY = [
     name: 'arif farooqui - Full Package - Manali',
     customerName: 'Arif Farooqui',
     phone: '+91 97776 65544',
-    destination: 'manali town, Solang Valley, Atal Tunnel & Sissu, Naggar & Departure',
+    destination: 'Manali Town, Solang Valley, Atal Tunnel & Sissu, Naggar',
     coverImage: 'https://images.unsplash.com/photo-1544644181-1484b3fdfc62?auto=format&fit=crop&w=800&q=80',
     startDate: '2026-08-05',
     endDate: '2026-08-09',
@@ -144,16 +144,41 @@ export const MOCK_ITINERARY = [
     children: 0,
     infants: 0,
     type: 'Friends',
-    amount: 30000.00,
-    description: 'Manali full package tour covers local Solang valley sightseeing, Sissu waterfalls via Atal Tunnel, and historic Naggar castle visit.',
+    amount: 52500.00,
+    description: 'A complete 5-day Manali package for 3 friends featuring local Manali sightseeing, adrenaline-filled Solang Valley activities, a scenic excursion through the world-famous Atal Tunnel to Sissu, and a heritage day at Naggar Castle. Includes 4-night stay at Alpine Chalet Manali, private SUV transfers, MAP meal plan, adventure passes, and all major sightseeing entries.',
     status: 'Confirmed',
     createdAt: '2026-07-30T09:15:00.000Z',
     days: [
-      { dayNumber: 1, title: 'manali town', description: 'Arrival in Manali Town and sightseeing', image: 'https://images.unsplash.com/photo-1544644181-1484b3fdfc62?auto=format&fit=crop&w=600&q=80' },
-      { dayNumber: 2, title: 'Solang Valley', description: 'Adventure and snow sports in Solang', image: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=600&q=80' },
-      { dayNumber: 3, title: 'Atal Tunnel & Sissu', description: 'Excursion through Atal Tunnel to Lahaul valley', image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80' },
-      { dayNumber: 4, title: 'Naggar & Departure', description: 'Visit historic Naggar Castle and local markets', image: 'https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?auto=format&fit=crop&w=600&q=80' },
-      { dayNumber: 5, title: 'Departure', description: 'Travel back to Delhi/Chandigarh', image: 'https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=600&q=80' }
+      {
+        dayNumber: 1,
+        title: 'Manali Town',
+        description: 'Morning arrival in Manali from Delhi/Chandigarh by private SUV/Volvo transfer. Check-in at Alpine Chalet Manali. After freshening up, visit Hadimba Devi Temple set amidst the cedar forest, followed by Club House for indoor activities and photography. Evening walk along the iconic Mall Road, visit the Manu Temple, and explore the local market for Himachali shawls and souvenirs. Dinner and overnight stay in Manali.',
+        image: 'https://images.unsplash.com/photo-1544644181-1484b3fdfc62?auto=format&fit=crop&w=600&q=80'
+      },
+      {
+        dayNumber: 2,
+        title: 'Solang Valley',
+        description: 'Early breakfast and depart for Solang Valley (14 km from Manali). Experience adventure activities such as paragliding, zorbing, and ropeway ride to the snow point. Enjoy snow scooter rides or skiing depending on weather conditions. Packed lunch or hot lunch at a local cafe in Solang. Return to Manali by late afternoon. Evening free for leisure or optional visit to Old Manali cafes and Manu Temple. Dinner and overnight stay.',
+        image: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=600&q=80'
+      },
+      {
+        dayNumber: 3,
+        title: 'Atal Tunnel & Sissu',
+        description: 'After breakfast, proceed on one of the most scenic drives through the Atal Tunnel (9.02 km), the world\'s longest highway tunnel above 10,000 feet. Reach Sissu in Lahaul Valley, visit the stunning Sissu Lake and Sissu Waterfall surrounded by snow-capped mountains. Optional river rafting or riverside walk at Tandi. Hot lunch at a local dhaba. En route back, stop at Keylong viewpoints for panoramic photography. Return to Manali for dinner and overnight stay.',
+        image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80'
+      },
+      {
+        dayNumber: 4,
+        title: 'Naggar & Manali Local',
+        description: 'Post breakfast, drive to Naggar (22 km), the former capital of Kullu. Visit the historic Naggar Castle, now a heritage hotel offering panoramic Kullu Valley views. Explore the Roerich Art Gallery and Museum, showcasing paintings and artifacts of Russian artist Nicholas Roerich. Visit the Tripura Sundari Temple and ancient Gauri Shankar Temple. Return to Manali by evening for last-minute shopping at Mall Road and Tibetan Market. Dinner and overnight stay.',
+        image: 'https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?auto=format&fit=crop&w=600&q=80'
+      },
+      {
+        dayNumber: 5,
+        title: 'Departure',
+        description: 'After breakfast, check-out from the hotel. Enjoy a brief stop at Vashisht Village for the hot sulphur springs and Vashisht Temple if time permits. Later proceed for your return journey to Delhi/Chandigarh by private SUV or Volvo bus. Tour concludes with wonderful memories of Manali.',
+        image: 'https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=600&q=80'
+      }
     ],
     services: [
       {
@@ -171,18 +196,160 @@ export const MOCK_ITINERARY = [
           Double: { count: 1, costPerNight: 5000, total: 20000 }
         },
         totalCost: 20000,
-        description: 'Includes breakfast and dinner daily.'
+        supplierCost: 18500.00,
+        autoSupplierCost: true,
+        description: 'Valley-facing deluxe rooms for 3 guests (1 extra bed), includes breakfast and dinner daily.'
       },
       {
         id: 'srv-302',
+        dayNumber: 1,
+        type: 'Transport',
+        supplier: 'Himachal Car Rentals',
+        title: 'Arrival Transfer - Delhi to Manali',
+        vehicleType: 'SUV',
+        days: 1,
+        dailyRate: 5500.00,
+        totalCost: 5500.00,
+        supplierCost: 5000.00,
+        autoSupplierCost: true,
+        description: 'Private SUV pick-up from Delhi/Chandigarh to Manali hotel. Includes driver allowance, tolls, and fuel.'
+      },
+      {
+        id: 'srv-303',
+        dayNumber: 2,
+        type: 'Transport',
+        supplier: 'Himachal Car Rentals',
+        title: 'Manali to Solang Valley & Local Sightseeing',
+        vehicleType: 'SUV',
+        days: 1,
+        dailyRate: 3500.00,
+        totalCost: 3500.00,
+        supplierCost: 3200.00,
+        autoSupplierCost: true,
+        description: 'Private SUV at disposal for Solang Valley and local sightseeing. Driver allowance included.'
+      },
+      {
+        id: 'srv-304',
+        dayNumber: 2,
+        type: 'Adventurous Activity',
+        supplier: 'Solang Adventure Hub',
+        title: 'Solang Valley Adventure Pass',
+        location: 'Solang Valley',
+        adultCost: 2000.00,
+        totalCost: 6000.00,
+        supplierCost: 5100.00,
+        autoSupplierCost: true,
+        description: 'Includes ropeway ride, paragliding short fly, and zorbing coupons for 3 adults.'
+      },
+      {
+        id: 'srv-305',
         dayNumber: 3,
         type: 'Transport',
-        title: 'Full Day Private SUV Rental',
+        supplier: 'Himachal Car Rentals',
+        title: 'Full Day Private SUV - Atal Tunnel & Sissu',
         vehicleType: 'SUV',
-        days: 2,
+        days: 1,
         dailyRate: 5000.00,
-        totalCost: 10000,
-        description: 'Guided tour to Sissu waterfalls via Atal Tunnel.'
+        totalCost: 5000.00,
+        supplierCost: 4500.00,
+        autoSupplierCost: true,
+        description: 'Guided full-day tour to Sissu Lake, Sissu Waterfall, and Atal Tunnel viewpoints.'
+      },
+      {
+        id: 'srv-306',
+        dayNumber: 3,
+        type: 'Adventurous Activity',
+        supplier: 'Sissu River Camps',
+        title: 'Sissu Riverside Activities',
+        location: 'Sissu',
+        adultCost: 1000.00,
+        totalCost: 3000.00,
+        supplierCost: 2400.00,
+        autoSupplierCost: true,
+        description: 'Includes riverside walk and guided river rafting experience in the Chandra River for 3 adults.'
+      },
+      {
+        id: 'srv-307',
+        dayNumber: 4,
+        type: 'Transport',
+        supplier: 'Himachal Car Rentals',
+        title: 'Manali to Naggar Heritage Sightseeing',
+        vehicleType: 'SUV',
+        days: 1,
+        dailyRate: 3500.00,
+        totalCost: 3500.00,
+        supplierCost: 3200.00,
+        autoSupplierCost: true,
+        description: 'Private SUV for Naggar Castle, Roerich Art Gallery, and nearby temple visits.'
+      },
+      {
+        id: 'srv-308',
+        dayNumber: 4,
+        type: 'Sightseeing',
+        supplier: 'Naggar Tourism',
+        title: 'Naggar Castle & Roerich Art Gallery Entry',
+        location: 'Naggar',
+        adultCost: 833.33,
+        totalCost: 2500.00,
+        supplierCost: 2100.00,
+        autoSupplierCost: true,
+        description: 'Entry tickets for Naggar Castle, Roerich Art Gallery, and Tripura Sundari Temple for 3 adults.'
+      },
+      {
+        id: 'srv-309',
+        dayNumber: 5,
+        type: 'Transport',
+        supplier: 'Himachal Car Rentals',
+        title: 'Departure Transfer - Manali to Delhi',
+        vehicleType: 'SUV',
+        days: 1,
+        dailyRate: 3500.00,
+        totalCost: 3500.00,
+        supplierCost: 3200.00,
+        autoSupplierCost: true,
+        description: 'Private SUV drop from Manali hotel to Delhi/Chandigarh. Includes driver allowance and tolls.'
+      }
+    ],
+    termsAndPolicies: [
+      {
+        id: 'block-inclusions',
+        title: 'Inclusions',
+        items: [
+          'Accommodation for 4 nights in a 4-star hotel at Manali on MAP plan (breakfast and dinner).',
+          'All transfers and sightseeing by private SUV as per the itinerary.',
+          'Adventure activity passes for Solang Valley including ropeway and paragliding.',
+          'Sissu river activity charges and entry tickets for Naggar Castle & Roerich Gallery.',
+          'Driver allowance, toll tax, parking, and fuel charges for included transport.'
+        ]
+      },
+      {
+        id: 'block-exclusions',
+        title: 'Exclusions',
+        items: [
+          'Airfare or train fare to and from Delhi/Chandigarh.',
+          'Personal expenses such as tips, laundry, telephone calls, and mini bar.',
+          'Meals other than those mentioned in the package (lunches are not included).',
+          'Travel insurance, medical expenses, and any optional activities not mentioned.',
+          'Anything not specifically mentioned under inclusions.'
+        ]
+      },
+      {
+        id: 'block-payment',
+        title: 'Payment Policy',
+        items: [
+          '50% advance payment required at the time of confirmation.',
+          'Balance 50% to be paid 7 days before the travel date.',
+          'Rates are subject to hotel and transport availability until booking is confirmed.'
+        ]
+      },
+      {
+        id: 'block-cancellation',
+        title: 'Cancellation Policy',
+        items: [
+          'Cancellation requests must be submitted in writing or email.',
+          'Retention charges will apply as per hotel, transport supplier, and company policy.',
+          'No refund for unutilized services or no-shows.'
+        ]
       }
     ]
   },

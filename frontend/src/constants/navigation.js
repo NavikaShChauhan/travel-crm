@@ -65,7 +65,6 @@ export const NAV_ITEMS = [
     children: [
       { label: 'Dashboard', path: `${ROUTES.ITINERARY}/dashboard`, icon: MdOutlineDashboard },
       { label: 'Create Itinerary', path: `${ROUTES.ITINERARY}/build`, icon: MdOutlineMap },
-      { label: 'Saved Templates', path: `${ROUTES.ITINERARY}/templates`, icon: MdOutlineDescription },
       { label: 'Settings', path: `${ROUTES.ITINERARY}/settings`, icon: MdOutlineSettings },
       { label: 'Analytics', path: `${ROUTES.ITINERARY}/analytics`, icon: MdOutlineAssessment },
     ],

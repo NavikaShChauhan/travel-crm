@@ -708,7 +708,37 @@ export default function ItineraryBuilderPage() {
       return;
     }
 
-    const servicesByDay = (dayNum) => services.filter(s => s.dayNumber === dayNum);
+    const getServicesForDay = (dayNum, servicesList = services) => {
+      const result = [];
+      servicesList.forEach((s) => {
+        const start = s.dayNumber || 1;
+        const duration = parseInt(s.nights || s.days || 1, 10);
+        if (dayNum === start) {
+          result.push({ ...s, isStartDay: true });
+        } else if (duration > 1 && dayNum > start && dayNum <= start + duration - 1) {
+          const currentNight = dayNum - start + 1;
+          let ongoingLabel = '';
+          if (s.type === 'Hotel') {
+            ongoingLabel = ` (Night ${currentNight} of ${duration})`;
+          } else if (s.type === 'Cruise') {
+            ongoingLabel = ` (Day ${currentNight} of ${duration})`;
+          } else {
+            ongoingLabel = ` (Day ${currentNight} of ${duration})`;
+          }
+          result.push({
+            ...s,
+            isStartDay: false,
+            currentNight,
+            totalDuration: duration,
+            title: `${s.title}${ongoingLabel}`,
+            description: `Ongoing ${s.type || 'stay'} booked from Day ${start} to Day ${start + duration - 1}.`
+          });
+        }
+      });
+      return result;
+    };
+
+    const servicesByDay = (dayNum) => getServicesForDay(dayNum, services);
 
     const html = `
       <html>
@@ -984,9 +1014,39 @@ export default function ItineraryBuilderPage() {
     printWindow.document.close();
   };
 
+  const getServicesForDay = (dayNum, servicesList = services) => {
+    const result = [];
+    servicesList.forEach((s) => {
+      const start = s.dayNumber || 1;
+      const duration = parseInt(s.nights || s.days || 1, 10);
+      if (dayNum === start) {
+        result.push({ ...s, isStartDay: true });
+      } else if (duration > 1 && dayNum > start && dayNum <= start + duration - 1) {
+        const currentNight = dayNum - start + 1;
+        let ongoingLabel = '';
+        if (s.type === 'Hotel') {
+          ongoingLabel = ` (Night ${currentNight} of ${duration})`;
+        } else if (s.type === 'Cruise') {
+          ongoingLabel = ` (Day ${currentNight} of ${duration})`;
+        } else {
+          ongoingLabel = ` (Day ${currentNight} of ${duration})`;
+        }
+        result.push({
+          ...s,
+          isStartDay: false,
+          currentNight,
+          totalDuration: duration,
+          title: `${s.title}${ongoingLabel}`,
+          description: `Ongoing ${s.type || 'stay'} booked from Day ${start} to Day ${start + duration - 1}.`
+        });
+      }
+    });
+    return result;
+  };
+
   // Helper check to display icons in left sidebar
   const getAttachedIcons = (dayNum) => {
-    const dayServices = services.filter((s) => s.dayNumber === dayNum);
+    const dayServices = getServicesForDay(dayNum, services);
     const types = Array.from(new Set(dayServices.map((s) => s.type)));
     return types.map((t, i) => {
       const Icon = SERVICE_ICONS[t] || MdCardGiftcard;
@@ -1007,8 +1067,8 @@ export default function ItineraryBuilderPage() {
     return () => document.removeEventListener('click', closeActionMenu);
   }, []);
 
-  // Filter services for the active day
-  const activeDayServices = services.filter((s) => s.dayNumber === activeDay);
+  // Filter services for the active day (including multi-day continuation stays)
+  const activeDayServices = getServicesForDay(activeDay, services);
   const activeDayData = days.find((d) => d.dayNumber === activeDay) || { title: 'Day Details', description: 'Arrival and activities', image: PRESET_COVERS[0].url };
 
   // Render CREATE Mode (Image 3)
@@ -1180,7 +1240,7 @@ export default function ItineraryBuilderPage() {
             <MdExplore size={24} style={{ color: '#153328' }} />
           </div>
           <div className="ridgeline-top-actions">
-            <button className="btn-ridgeline-outline" onClick={() => setPdfModalOpen(true)}>
+            <button className="btn-ridgeline-outline" onClick={() => navigate('/itinerary')}>
               Preview
             </button>
             <button className="btn-ridgeline-outline" onClick={() => setPdfModalOpen(true)}>
@@ -1327,6 +1387,54 @@ export default function ItineraryBuilderPage() {
                 {activeDayServices.map((srv, idx) => {
                   const originalIndex = services.findIndex((s) => s.id === srv.id);
                   const IconComp = SERVICE_ICONS[srv.type] || MdExplore;
+
+                  if (srv.isStartDay === false) {
+                    const nightOrDayLabel = srv.type === 'Hotel'
+                      ? `HOTEL STAY • NIGHT ${srv.currentNight} OF ${srv.totalDuration}`
+                      : srv.type === 'Cruise'
+                      ? `CRUISE JOURNEY • DAY ${srv.currentNight} OF ${srv.totalDuration}`
+                      : `${(srv.type || 'SERVICE').toUpperCase()} • DAY ${srv.currentNight} OF ${srv.totalDuration}`;
+
+                    return (
+                      <div
+                        key={`${srv.id}-cont-${activeDay}`}
+                        className="ridgeline-service-item-card"
+                        style={{ borderLeft: '4px solid #059669', background: '#F0FDF4' }}
+                      >
+                        <div className="ridgeline-service-left-box">
+                          <div className="ridgeline-icon-square" style={{ background: '#D1FAE5', color: '#047857' }}>
+                            <IconComp />
+                          </div>
+                          <div>
+                            <div className="ridgeline-service-category-lbl" style={{ color: '#047857', fontWeight: 800 }}>
+                              {nightOrDayLabel}
+                            </div>
+                            <h3 className="ridgeline-service-main-title">
+                              {srv.title.replace(/\s\([^)]+\)$/, '')} <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#059669', background: '#D1FAE5', padding: '2px 8px', borderRadius: '10px', marginLeft: '6px' }}>Booked &amp; Included</span>
+                            </h3>
+                            <p className="ridgeline-service-desc-text">
+                              {srv.type === 'Hotel'
+                                ? `Ongoing hotel stay at ${srv.title.replace(/\s\([^)]+\)$/, '')}${srv.location ? ` (${srv.location})` : ''}. Check-in on Day ${srv.dayNumber}.`
+                                : srv.type === 'Cruise'
+                                ? `Ongoing cruise aboard ${srv.title.replace(/\s\([^)]+\)$/, '')}. Embarked on Day ${srv.dayNumber}.`
+                                : `Ongoing service started on Day ${srv.dayNumber}.`}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="ridgeline-service-right-box">
+                          <span style={{ fontSize: '0.75rem', fontWeight: 800, background: '#059669', color: '#FFFFFF', padding: '4px 10px', borderRadius: '12px' }}>
+                            Ongoing
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  const duration = parseInt(srv.nights || srv.days || 1, 10);
+                  const durationBadge = duration > 1
+                    ? srv.type === 'Hotel' ? ` (${duration} Nights Stay)` : ` (${duration} Days Duration)`
+                    : '';
+
                   return (
                     <div key={srv.id || idx} className="ridgeline-service-item-card">
                       <div className="ridgeline-service-left-box">
@@ -1334,7 +1442,7 @@ export default function ItineraryBuilderPage() {
                           <IconComp />
                         </div>
                         <div>
-                          <div className="ridgeline-service-category-lbl">{(srv.type || 'SIGHTSEEING').toUpperCase()}</div>
+                          <div className="ridgeline-service-category-lbl">{(srv.type || 'SIGHTSEEING').toUpperCase()}{durationBadge ? ` • ${durationBadge.toUpperCase().trim()}` : ''}</div>
                           <h3 className="ridgeline-service-main-title">{srv.title}</h3>
                           <p className="ridgeline-service-desc-text">{srv.description || srv.location || 'Included service for travellers.'}</p>
                         </div>
