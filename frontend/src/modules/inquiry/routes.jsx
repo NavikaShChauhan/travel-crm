@@ -4,7 +4,11 @@ import { ROUTES } from '@constants/routes';
 import InquiryDashboardPage from './pages/InquiryDashboardPage';
 import InquiryManualPage from './pages/InquiryManualPage';
 import InquiryLeadDetailPage from './pages/InquiryLeadDetailPage';
-import InquiryBlankSubmodulePage from './pages/InquiryBlankSubmodulePage';
+import InquiryWebsitePage from './pages/InquiryWebsitePage';
+import InquiryWhatsappPage from './pages/InquiryWhatsappPage';
+import InquiryInstagramPage from './pages/InquiryInstagramPage';
+import InquiryB2BPage from './pages/InquiryB2BPage';
+import InquiryRepeatPage from './pages/InquiryRepeatPage';
 
 /**
  * Route registry for the "inquiry" module.
@@ -28,47 +32,22 @@ export const inquiryRoutes = [
   },
   {
     path: ROUTES.INQUIRY_WEBSITE,
-    element: (
-      <InquiryBlankSubmodulePage
-        title="Inquiry Engine / Website"
-        subtitle="Manage website enquiry forms, web leads, and automated landing page submissions."
-      />
-    ),
+    element: <InquiryWebsitePage />,
   },
   {
     path: ROUTES.INQUIRY_WHATSAPP,
-    element: (
-      <InquiryBlankSubmodulePage
-        title="Inquiry Engine / WhatsApp"
-        subtitle="Manage incoming WhatsApp chat enquiries, chatbot triggers, and conversation history."
-      />
-    ),
+    element: <InquiryWhatsappPage />,
   },
   {
     path: ROUTES.INQUIRY_INSTAGRAM,
-    element: (
-      <InquiryBlankSubmodulePage
-        title="Inquiry Engine / Instagram & Meta Ads"
-        subtitle="Track lead ad campaigns, DMs, and social media inquiry conversions."
-      />
-    ),
+    element: <InquiryInstagramPage />,
   },
   {
     path: ROUTES.INQUIRY_B2B,
-    element: (
-      <InquiryBlankSubmodulePage
-        title="Inquiry Engine / B2B Partners"
-        subtitle="Manage B2B agent enquiries, partner portals, and white-label requests."
-      />
-    ),
+    element: <InquiryB2BPage />,
   },
   {
     path: ROUTES.INQUIRY_REPEAT,
-    element: (
-      <InquiryBlankSubmodulePage
-        title="Inquiry Engine / Repeat Customers"
-        subtitle="Track returning client enquiries, loyalty rewards, and automated follow-ups."
-      />
-    ),
+    element: <InquiryRepeatPage />,
   },
 ];

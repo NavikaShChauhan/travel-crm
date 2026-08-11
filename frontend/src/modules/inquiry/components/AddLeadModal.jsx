@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -12,14 +12,25 @@ import {
   Grid,
   IconButton,
   Divider,
-  FormControlLabel,
-  Switch,
   Slider,
+  Stack,
+  Chip,
+  InputAdornment,
 } from '@mui/material';
-import { MdClose, MdPersonAdd } from 'react-icons/md';
+import { MdClose, MdPersonAdd, MdContentCopy } from 'react-icons/md';
 import { useInquiry } from '../contexts/InquiryContext';
 
-const TRAVEL_PURPOSE_OPTIONS = ['Leisure', 'Honeymoon', 'Family', 'Corporate', 'Group'];
+const TRAVEL_PURPOSE_OPTIONS = [
+  'Leisure',
+  'Honeymoon',
+  'Family',
+  'Corporate',
+  'Group',
+  'Adventure',
+  'Pilgrimage',
+  'Other',
+];
+
 const SOURCE_OPTIONS = [
   'Manual',
   'Website',
@@ -31,6 +42,7 @@ const SOURCE_OPTIONS = [
   'Referral',
   'Google Ads',
 ];
+
 const LEAD_STATUS_OPTIONS = [
   'New',
   'Contacted',
@@ -42,14 +54,85 @@ const LEAD_STATUS_OPTIONS = [
   'Lost',
   'Closed',
 ];
+
+const LEAD_STAGE_OPTIONS = [
+  'New Lead',
+  'Qualification',
+  'Proposal Sent',
+  'Negotiation',
+  'Closed Won',
+  'Closed Lost',
+];
+
 const PRIORITY_OPTIONS = ['Hot', 'Warm', 'Cold'];
-const SALES_USERS = ['Priya Nair', 'Neha Gupta', 'Rahul Sharma', 'Ananya Roy', 'Priya Sharma', 'Arjun Nair'];
-const HOTEL_CATEGORY_OPTIONS = ['3★', '4★', '5★', 'Luxury Resort', 'Boutique Hotel'];
-const MEAL_OPTIONS = ['Breakfast Only', 'Half Board', 'Full Board', 'All Inclusive'];
-const FOLLOWUP_MODES = ['Call', 'WhatsApp', 'Email', 'Meeting'];
+
+const SALES_USERS = [
+  'Priya Nair',
+  'Neha Gupta',
+  'Rahul Sharma',
+  'Ananya Roy',
+  'Priya Sharma',
+  'Arjun Nair',
+];
+
+const HOTEL_CATEGORY_OPTIONS = [
+  '3★',
+  '4★',
+  '5★',
+  'Luxury Resort',
+  'Boutique Hotel',
+  'Budget / Homestay',
+];
+
+const MEAL_OPTIONS = [
+  'Breakfast Only (CP)',
+  'Half Board (MAP)',
+  'Full Board (AP)',
+  'All Inclusive',
+  'Room Only (EP)',
+];
+
+const TRANSPORTATION_OPTIONS = [
+  'Private Cab',
+  'Shared Transfers',
+  'Train',
+  'Bus',
+  'Self-Drive',
+  'Flight Only',
+  'Not Required',
+];
+
+const FOLLOWUP_MODES = ['Call', 'WhatsApp', 'Email', 'Meeting', 'Video Call'];
+
+const CUSTOMER_TYPE_OPTIONS = ['Individual', 'Corporate', 'B2B'];
+
+const CUSTOMER_CATEGORY_OPTIONS = ['New', 'Existing', 'Repeat', 'VIP'];
+
+// Helper label component with red asterisk for mandatory fields
+function FieldLabel({ label, required = false }) {
+  return (
+    <Typography
+      variant="caption"
+      sx={{
+        fontWeight: 700,
+        color: '#475569',
+        mb: 0.5,
+        display: 'block',
+        textTransform: 'uppercase',
+        fontSize: 11,
+      }}
+    >
+      {label}
+      {required && <span style={{ color: '#EF4444', marginLeft: '4px', fontSize: '13px' }}>*</span>}
+    </Typography>
+  );
+}
 
 export default function AddLeadModal() {
-  const { isAddModalOpen, closeAddModal, addLead } = useInquiry();
+  const { isAddModalOpen, closeAddModal, addLead, leads } = useInquiry();
+
+  // Calculate next Auto Lead ID preview
+  const nextLeadIdPreview = `Q/26/${1961925 + (leads ? leads.length : 0)}`;
 
   const [formData, setFormData] = useState({
     // Section 1: Basic Information
@@ -58,7 +141,6 @@ export default function AddLeadModal() {
     alternatePhone: '',
     email: '',
     whatsappNumber: '',
-    companyName: '',
 
     // Section 2: Travel Information
     destination: '',
@@ -73,37 +155,50 @@ export default function AddLeadModal() {
     travelType: 'Domestic',
     travelPurpose: 'Leisure',
 
-    // Section 3: Customer Preferences
+    // Section 3: Travel Preferences
     budget: '',
     hotelCategory: '4★',
-    mealPreference: 'Breakfast Only',
-    flightRequired: false,
-    trainRequired: false,
-    cabRequired: false,
-    visaRequired: false,
-    passportAvailable: false,
-    travelInsuranceRequired: false,
+    mealPreference: 'Breakfast Only (CP)',
+    transportationRequired: 'Private Cab',
+    flightRequired: 'No',
+    visaRequired: 'No',
+    travelInsuranceRequired: 'No',
 
     // Section 4: Lead Management
     leadStatus: 'New',
+    leadStage: 'New Lead',
     priority: 'Warm',
     assignedSalesUser: 'Priya Nair',
     source: 'Manual',
     expectedBookingDate: '',
     probabilityPct: 50,
+    estimatedDealValue: '',
 
-    // Section 5: Follow-up Information
+    // Section 5: Follow-up
     lastContactDate: '',
     nextFollowupDate: '',
     followupMode: 'WhatsApp',
     followupNotes: '',
 
-    // Section 6: Customer Requirements
+    // Section 6: Requirements
     customerRequirements: '',
-
-    // Section 7: Internal Notes
     internalNotes: '',
+
+    // Section 7: Customer Classification
+    customerType: 'Individual',
+    customerCategory: 'New',
   });
+
+  // Calculate Number of Nights automatically
+  const numberOfNights = useMemo(() => {
+    if (!formData.travelStart || !formData.travelEnd) return 0;
+    const dStart = new Date(formData.travelStart);
+    const dEnd = new Date(formData.travelEnd);
+    if (isNaN(dStart.getTime()) || isNaN(dEnd.getTime())) return 0;
+    const diffTime = dEnd.getTime() - dStart.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays > 0 ? diffDays : 0;
+  }, [formData.travelStart, formData.travelEnd]);
 
   // Dynamically update childAges array length when children count changes
   useEffect(() => {
@@ -145,6 +240,12 @@ export default function AddLeadModal() {
     }));
   };
 
+  const handleCopyMobileToWhatsapp = () => {
+    if (formData.phone) {
+      setFormData((prev) => ({ ...prev, whatsappNumber: prev.phone }));
+    }
+  };
+
   const handleChildAgeChange = (index, val) => {
     setFormData((prev) => {
       const updated = [...prev.childAges];
@@ -161,13 +262,36 @@ export default function AddLeadModal() {
     });
   };
 
-  const totalPax = (parseInt(formData.adults, 10) || 0) + (parseInt(formData.children, 10) || 0) + (parseInt(formData.infants, 10) || 0);
+  const totalPax =
+    (parseInt(formData.adults, 10) || 0) +
+    (parseInt(formData.children, 10) || 0) +
+    (parseInt(formData.infants, 10) || 0);
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    // Verify 8 mandatory fields explicitly before submitting
+    if (
+      !formData.clientName.trim() ||
+      !formData.phone.trim() ||
+      !formData.destination.trim() ||
+      !formData.departureCity.trim() ||
+      !formData.travelStart ||
+      !formData.adults ||
+      !formData.source ||
+      !formData.assignedSalesUser
+    ) {
+      return;
+    }
+
     addLead({
       ...formData,
+      durationNights: numberOfNights,
+      flightRequired: formData.flightRequired === 'Yes',
+      visaRequired: formData.visaRequired === 'Yes',
+      travelInsuranceRequired: formData.travelInsuranceRequired === 'Yes',
       pax: totalPax,
+      totalPax: totalPax,
     });
     closeAddModal();
   };
@@ -181,21 +305,30 @@ export default function AddLeadModal() {
       PaperProps={{
         sx: {
           borderRadius: '16px',
-          p: 1.5,
+          p: 1,
           bgcolor: '#FFFFFF',
           boxShadow: '0 20px 40px rgba(0,0,0,0.12)',
         },
       }}
     >
-      <DialogTitle sx={{ m: 0, p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <DialogTitle
+        sx={{
+          m: 0,
+          p: 2,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          borderBottom: '1px solid #E2E8F0',
+        }}
+      >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
           <Box
             sx={{
-              width: 36,
-              height: 36,
-              borderRadius: '8px',
+              width: 40,
+              height: 40,
+              borderRadius: '10px',
               bgcolor: '#EEF2FF',
-              color: '#3B82F6',
+              color: '#2563EB',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -204,11 +337,18 @@ export default function AddLeadModal() {
             <MdPersonAdd size={22} />
           </Box>
           <Box>
-            <Typography variant="h6" sx={{ fontWeight: 700, fontSize: 18, color: '#1E293B' }}>
-              Add New Lead Form
-            </Typography>
+            <Stack direction="row" spacing={1} alignItems="center">
+              <Typography variant="h6" sx={{ fontWeight: 800, fontSize: 18, color: '#0F172A' }}>
+                Create New Lead Form
+              </Typography>
+              <Chip
+                label="7 Sections"
+                size="small"
+                sx={{ bgcolor: '#EFF6FF', color: '#2563EB', fontWeight: 700, fontSize: 11 }}
+              />
+            </Stack>
             <Typography variant="caption" sx={{ color: '#64748B' }}>
-              7-Section Detailed Enquiry Entry Form
+              Fill enquiry details. Fields marked with <span style={{ color: '#EF4444' }}>*</span> are mandatory.
             </Typography>
           </Box>
         </Box>
@@ -222,129 +362,272 @@ export default function AddLeadModal() {
           <Grid container spacing={2.5}>
             {/* Section 1: Basic Information */}
             <Grid item xs={12}>
-              <Typography variant="caption" sx={{ fontWeight: 800, color: '#2563EB', textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', mb: 0.5 }}>
-                1. Basic Information (Contact Details)
+              <Typography
+                variant="caption"
+                sx={{
+                  fontWeight: 800,
+                  color: '#2563EB',
+                  textTransform: 'uppercase',
+                  letterSpacing: 0.5,
+                  display: 'block',
+                  mb: 0.5,
+                  fontSize: 12,
+                }}
+              >
+                1. Basic Information
               </Typography>
               <Divider />
             </Grid>
 
+            {/* Change #1: Remove duplicate "Auto" */}
             <Grid item xs={12} sm={6} md={4}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', mb: 0.5, display: 'block', textTransform: 'uppercase', fontSize: 11 }}>
-                Customer Name*
-              </Typography>
-              <TextField fullWidth name="clientName" placeholder="Enter customer name" value={formData.clientName} onChange={handleChange} size="small" required />
+              <FieldLabel label="Lead ID — Auto-generated" />
+              <TextField
+                fullWidth
+                size="small"
+                value={nextLeadIdPreview}
+                disabled
+                InputProps={{
+                  sx: { bgcolor: '#F8FAFC', fontWeight: 700, color: '#2563EB' },
+                }}
+              />
             </Grid>
 
             <Grid item xs={12} sm={6} md={4}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', mb: 0.5, display: 'block', textTransform: 'uppercase', fontSize: 11 }}>
-                Mobile Number*
-              </Typography>
-              <TextField fullWidth name="phone" placeholder="+91 00000 00000" value={formData.phone} onChange={handleChange} size="small" required />
+              <FieldLabel label="Customer Name" required />
+              <TextField
+                fullWidth
+                name="clientName"
+                placeholder="Full name of customer"
+                value={formData.clientName}
+                onChange={handleChange}
+                size="small"
+                required
+              />
             </Grid>
 
             <Grid item xs={12} sm={6} md={4}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', mb: 0.5, display: 'block', textTransform: 'uppercase', fontSize: 11 }}>
-                Alternate Mobile
-              </Typography>
-              <TextField fullWidth name="alternatePhone" placeholder="Alternate phone" value={formData.alternatePhone} onChange={handleChange} size="small" />
+              <FieldLabel label="Mobile Number" required />
+              <TextField
+                fullWidth
+                name="phone"
+                placeholder="+91 98765 00000"
+                value={formData.phone}
+                onChange={handleChange}
+                size="small"
+                required
+              />
             </Grid>
 
             <Grid item xs={12} sm={6} md={4}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', mb: 0.5, display: 'block', textTransform: 'uppercase', fontSize: 11 }}>
-                Email
-              </Typography>
-              <TextField fullWidth name="email" placeholder="customer@example.com" value={formData.email} onChange={handleChange} size="small" />
+              <FieldLabel label="Alternate Mobile" />
+              <TextField
+                fullWidth
+                name="alternatePhone"
+                placeholder="Secondary phone"
+                value={formData.alternatePhone}
+                onChange={handleChange}
+                size="small"
+              />
             </Grid>
 
             <Grid item xs={12} sm={6} md={4}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', mb: 0.5, display: 'block', textTransform: 'uppercase', fontSize: 11 }}>
-                WhatsApp Number
-              </Typography>
-              <TextField fullWidth name="whatsappNumber" placeholder="+91 WhatsApp" value={formData.whatsappNumber} onChange={handleChange} size="small" />
+              <FieldLabel label="Email" />
+              <TextField
+                fullWidth
+                type="email"
+                name="email"
+                placeholder="customer@example.com"
+                value={formData.email}
+                onChange={handleChange}
+                size="small"
+              />
             </Grid>
 
             <Grid item xs={12} sm={6} md={4}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', mb: 0.5, display: 'block', textTransform: 'uppercase', fontSize: 11 }}>
-                Company Name
-              </Typography>
-              <TextField fullWidth name="companyName" placeholder="Corporate / Business name" value={formData.companyName} onChange={handleChange} size="small" />
+              <FieldLabel label="WhatsApp Number" />
+              <TextField
+                fullWidth
+                name="whatsappNumber"
+                placeholder="+91 WhatsApp"
+                value={formData.whatsappNumber}
+                onChange={handleChange}
+                size="small"
+                InputProps={{
+                  endAdornment: formData.phone && formData.phone !== formData.whatsappNumber && (
+                    <InputAdornment position="end">
+                      <IconButton
+                        size="small"
+                        title="Copy Mobile Number"
+                        onClick={handleCopyMobileToWhatsapp}
+                        sx={{ color: '#2563EB' }}
+                      >
+                        <MdContentCopy size={16} />
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+              />
             </Grid>
 
             {/* Section 2: Travel Information */}
             <Grid item xs={12} sx={{ mt: 1 }}>
-              <Typography variant="caption" sx={{ fontWeight: 800, color: '#2563EB', textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', mb: 0.5 }}>
+              <Typography
+                variant="caption"
+                sx={{
+                  fontWeight: 800,
+                  color: '#2563EB',
+                  textTransform: 'uppercase',
+                  letterSpacing: 0.5,
+                  display: 'block',
+                  mb: 0.5,
+                  fontSize: 12,
+                }}
+              >
                 2. Travel Information
               </Typography>
               <Divider />
             </Grid>
 
             <Grid item xs={12} sm={6} md={3}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', mb: 0.5, display: 'block', textTransform: 'uppercase', fontSize: 11 }}>
-                Destination*
-              </Typography>
-              <TextField fullWidth name="destination" placeholder="e.g. Goa, Bali, Switzerland" value={formData.destination} onChange={handleChange} size="small" required />
+              <FieldLabel label="Destination" required />
+              <TextField
+                fullWidth
+                name="destination"
+                placeholder="e.g. Bali, Switzerland, Goa"
+                value={formData.destination}
+                onChange={handleChange}
+                size="small"
+                required
+              />
             </Grid>
 
             <Grid item xs={12} sm={6} md={3}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', mb: 0.5, display: 'block', textTransform: 'uppercase', fontSize: 11 }}>
-                Departure City*
-              </Typography>
-              <TextField fullWidth name="departureCity" placeholder="e.g. Delhi, Mumbai" value={formData.departureCity} onChange={handleChange} size="small" required />
+              <FieldLabel label="Departure City" required />
+              <TextField
+                fullWidth
+                name="departureCity"
+                placeholder="e.g. Delhi, Mumbai"
+                value={formData.departureCity}
+                onChange={handleChange}
+                size="small"
+                required
+              />
             </Grid>
 
             <Grid item xs={12} sm={6} md={3}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', mb: 0.5, display: 'block', textTransform: 'uppercase', fontSize: 11 }}>
-                Departure Date*
-              </Typography>
-              <TextField fullWidth type="date" name="travelStart" value={formData.travelStart} onChange={handleChange} size="small" InputLabelProps={{ shrink: true }} required />
+              <FieldLabel label="Departure Date" required />
+              <TextField
+                fullWidth
+                type="date"
+                name="travelStart"
+                value={formData.travelStart}
+                onChange={handleChange}
+                size="small"
+                InputLabelProps={{ shrink: true }}
+                required
+              />
             </Grid>
 
             <Grid item xs={12} sm={6} md={3}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', mb: 0.5, display: 'block', textTransform: 'uppercase', fontSize: 11 }}>
-                Return Date
-              </Typography>
-              <TextField fullWidth type="date" name="travelEnd" value={formData.travelEnd} onChange={handleChange} size="small" InputLabelProps={{ shrink: true }} />
+              <FieldLabel label="Return Date" />
+              <TextField
+                fullWidth
+                type="date"
+                name="travelEnd"
+                value={formData.travelEnd}
+                onChange={handleChange}
+                size="small"
+                InputLabelProps={{ shrink: true }}
+              />
             </Grid>
 
-            <Grid item xs={4} sm={2}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', mb: 0.5, display: 'block', textTransform: 'uppercase', fontSize: 11 }}>
-                Adults*
-              </Typography>
-              <TextField fullWidth type="number" name="adults" value={formData.adults} onChange={handleChange} size="small" />
+            {/* Change #4: Number of Nights — Auto */}
+            <Grid item xs={12} sm={6} md={3}>
+              <FieldLabel label="Number of Nights — Auto" />
+              <TextField
+                fullWidth
+                size="small"
+                value={formData.travelStart && formData.travelEnd ? `${numberOfNights} Nights` : 'Auto Calculated'}
+                disabled
+                InputProps={{
+                  sx: { bgcolor: '#F8FAFC', fontWeight: 700, color: '#0EA5E9' },
+                }}
+              />
             </Grid>
 
-            <Grid item xs={4} sm={2}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', mb: 0.5, display: 'block', textTransform: 'uppercase', fontSize: 11 }}>
-                Children
-              </Typography>
-              <TextField fullWidth type="number" name="children" value={formData.children} onChange={handleChange} size="small" />
+            <Grid item xs={4} sm={3} md={3}>
+              <FieldLabel label="Adults" required />
+              <TextField
+                fullWidth
+                type="number"
+                name="adults"
+                inputProps={{ min: 1 }}
+                value={formData.adults}
+                onChange={handleChange}
+                size="small"
+                required
+              />
             </Grid>
 
-            <Grid item xs={4} sm={2}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', mb: 0.5, display: 'block', textTransform: 'uppercase', fontSize: 11 }}>
-                Infants
-              </Typography>
-              <TextField fullWidth type="number" name="infants" value={formData.infants} onChange={handleChange} size="small" />
+            <Grid item xs={4} sm={3} md={3}>
+              <FieldLabel label="Children" />
+              <TextField
+                fullWidth
+                type="number"
+                name="children"
+                inputProps={{ min: 0 }}
+                value={formData.children}
+                onChange={handleChange}
+                size="small"
+              />
+            </Grid>
+
+            <Grid item xs={4} sm={3} md={3}>
+              <FieldLabel label="Infants" />
+              <TextField
+                fullWidth
+                type="number"
+                name="infants"
+                inputProps={{ min: 0 }}
+                value={formData.infants}
+                onChange={handleChange}
+                size="small"
+              />
             </Grid>
 
             <Grid item xs={12} sm={6} md={3}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', mb: 0.5, display: 'block', textTransform: 'uppercase', fontSize: 11 }}>
-                Trip Type
-              </Typography>
-              <TextField select fullWidth name="travelType" value={formData.travelType} onChange={handleChange} size="small">
+              <FieldLabel label="Trip Type" />
+              <TextField
+                select
+                fullWidth
+                name="travelType"
+                value={formData.travelType}
+                onChange={handleChange}
+                size="small"
+              >
                 {['Domestic', 'International'].map((opt) => (
-                  <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                  <MenuItem key={opt} value={opt}>
+                    {opt}
+                  </MenuItem>
                 ))}
               </TextField>
             </Grid>
 
             <Grid item xs={12} sm={6} md={3}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', mb: 0.5, display: 'block', textTransform: 'uppercase', fontSize: 11 }}>
-                Travel Purpose (Inquiry Type)
-              </Typography>
-              <TextField select fullWidth name="travelPurpose" value={formData.travelPurpose} onChange={handleChange} size="small">
+              <FieldLabel label="Travel Purpose" />
+              <TextField
+                select
+                fullWidth
+                name="travelPurpose"
+                value={formData.travelPurpose}
+                onChange={handleChange}
+                size="small"
+              >
                 {TRAVEL_PURPOSE_OPTIONS.map((opt) => (
-                  <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                  <MenuItem key={opt} value={opt}>
+                    {opt}
+                  </MenuItem>
                 ))}
               </TextField>
             </Grid>
@@ -352,13 +635,16 @@ export default function AddLeadModal() {
             {/* Dynamic Child Ages Inputs */}
             {formData.childAges.map((age, idx) => (
               <Grid item xs={6} sm={3} key={`child-age-${idx}`}>
-                <Typography variant="caption" sx={{ fontWeight: 700, color: '#2563EB', mb: 0.5, display: 'block', fontSize: 11 }}>
+                <Typography
+                  variant="caption"
+                  sx={{ fontWeight: 700, color: '#2563EB', mb: 0.5, display: 'block', fontSize: 11 }}
+                >
                   Child {idx + 1} Age
                 </Typography>
                 <TextField
                   fullWidth
                   size="small"
-                  placeholder="e.g. 6 years"
+                  placeholder="e.g. 5 years"
                   value={age}
                   onChange={(e) => handleChildAgeChange(idx, e.target.value)}
                 />
@@ -368,7 +654,10 @@ export default function AddLeadModal() {
             {/* Dynamic Infant Ages Inputs */}
             {formData.infantAges.map((age, idx) => (
               <Grid item xs={6} sm={3} key={`infant-age-${idx}`}>
-                <Typography variant="caption" sx={{ fontWeight: 700, color: '#D97706', mb: 0.5, display: 'block', fontSize: 11 }}>
+                <Typography
+                  variant="caption"
+                  sx={{ fontWeight: 700, color: '#D97706', mb: 0.5, display: 'block', fontSize: 11 }}
+                >
                   Infant {idx + 1} Age / Months
                 </Typography>
                 <TextField
@@ -381,149 +670,290 @@ export default function AddLeadModal() {
               </Grid>
             ))}
 
-            {/* Section 3: Customer Preferences */}
+            {/* Section 3: Travel Preferences */}
             <Grid item xs={12} sx={{ mt: 1 }}>
-              <Typography variant="caption" sx={{ fontWeight: 800, color: '#2563EB', textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', mb: 0.5 }}>
-                3. Customer Preferences & Transport
+              <Typography
+                variant="caption"
+                sx={{
+                  fontWeight: 800,
+                  color: '#2563EB',
+                  textTransform: 'uppercase',
+                  letterSpacing: 0.5,
+                  display: 'block',
+                  mb: 0.5,
+                  fontSize: 12,
+                }}
+              >
+                3. Travel Preferences
               </Typography>
               <Divider />
             </Grid>
 
-            <Grid item xs={12} sm={6} md={4}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', mb: 0.5, display: 'block', textTransform: 'uppercase', fontSize: 11 }}>
-                Budget
-              </Typography>
-              <TextField fullWidth name="budget" placeholder="e.g. ₹45,000 or INR 2.0L" value={formData.budget} onChange={handleChange} size="small" />
+            <Grid item xs={12} sm={6} md={3}>
+              <FieldLabel label="Budget ₹" />
+              <TextField
+                fullWidth
+                name="budget"
+                placeholder="e.g. ₹1,50,000"
+                value={formData.budget}
+                onChange={handleChange}
+                size="small"
+                InputProps={{
+                  startAdornment: <InputAdornment position="start">₹</InputAdornment>,
+                }}
+              />
             </Grid>
 
-            <Grid item xs={12} sm={6} md={4}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', mb: 0.5, display: 'block', textTransform: 'uppercase', fontSize: 11 }}>
-                Hotel Category
-              </Typography>
-              <TextField select fullWidth name="hotelCategory" value={formData.hotelCategory} onChange={handleChange} size="small">
+            <Grid item xs={12} sm={6} md={3}>
+              <FieldLabel label="Hotel Category" />
+              <TextField
+                select
+                fullWidth
+                name="hotelCategory"
+                value={formData.hotelCategory}
+                onChange={handleChange}
+                size="small"
+              >
                 {HOTEL_CATEGORY_OPTIONS.map((opt) => (
-                  <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                  <MenuItem key={opt} value={opt}>
+                    {opt}
+                  </MenuItem>
                 ))}
               </TextField>
             </Grid>
 
-            <Grid item xs={12} sm={6} md={4}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', mb: 0.5, display: 'block', textTransform: 'uppercase', fontSize: 11 }}>
-                Meal Plan
-              </Typography>
-              <TextField select fullWidth name="mealPreference" value={formData.mealPreference} onChange={handleChange} size="small">
+            <Grid item xs={12} sm={6} md={3}>
+              <FieldLabel label="Meal Plan" />
+              <TextField
+                select
+                fullWidth
+                name="mealPreference"
+                value={formData.mealPreference}
+                onChange={handleChange}
+                size="small"
+              >
                 {MEAL_OPTIONS.map((opt) => (
-                  <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                  <MenuItem key={opt} value={opt}>
+                    {opt}
+                  </MenuItem>
                 ))}
               </TextField>
             </Grid>
 
-            {/* Transport & Documentation Requirements Checkboxes */}
-            <Grid item xs={6} sm={4} md={2}>
-              <FormControlLabel
-                control={<Switch checked={formData.flightRequired} name="flightRequired" onChange={handleChange} color="primary" />}
-                label={<Typography variant="body2" sx={{ fontWeight: 600, fontSize: 12 }}>Flight Required</Typography>}
-              />
+            <Grid item xs={12} sm={6} md={3}>
+              <FieldLabel label="Transportation Required" />
+              <TextField
+                select
+                fullWidth
+                name="transportationRequired"
+                value={formData.transportationRequired}
+                onChange={handleChange}
+                size="small"
+              >
+                {TRANSPORTATION_OPTIONS.map((opt) => (
+                  <MenuItem key={opt} value={opt}>
+                    {opt}
+                  </MenuItem>
+                ))}
+              </TextField>
             </Grid>
 
-            <Grid item xs={6} sm={4} md={2}>
-              <FormControlLabel
-                control={<Switch checked={formData.trainRequired} name="trainRequired" onChange={handleChange} color="primary" />}
-                label={<Typography variant="body2" sx={{ fontWeight: 600, fontSize: 12 }}>Train Required</Typography>}
-              />
+            {/* Change #3: Flight Required, Visa Required, Travel Insurance -> Yes/No Dropdowns */}
+            <Grid item xs={12} sm={4} md={4}>
+              <FieldLabel label="Flight Required — Yes/No" />
+              <TextField
+                select
+                fullWidth
+                name="flightRequired"
+                value={formData.flightRequired}
+                onChange={handleChange}
+                size="small"
+              >
+                <MenuItem value="Yes">Yes</MenuItem>
+                <MenuItem value="No">No</MenuItem>
+              </TextField>
             </Grid>
 
-            <Grid item xs={6} sm={4} md={2}>
-              <FormControlLabel
-                control={<Switch checked={formData.cabRequired} name="cabRequired" onChange={handleChange} color="primary" />}
-                label={<Typography variant="body2" sx={{ fontWeight: 600, fontSize: 12 }}>Cab Required</Typography>}
-              />
+            <Grid item xs={12} sm={4} md={4}>
+              <FieldLabel label="Visa Required — Yes/No" />
+              <TextField
+                select
+                fullWidth
+                name="visaRequired"
+                value={formData.visaRequired}
+                onChange={handleChange}
+                size="small"
+              >
+                <MenuItem value="Yes">Yes</MenuItem>
+                <MenuItem value="No">No</MenuItem>
+              </TextField>
             </Grid>
 
-            <Grid item xs={6} sm={4} md={2}>
-              <FormControlLabel
-                control={<Switch checked={formData.visaRequired} name="visaRequired" onChange={handleChange} color="primary" />}
-                label={<Typography variant="body2" sx={{ fontWeight: 600, fontSize: 12 }}>Visa Required</Typography>}
-              />
-            </Grid>
-
-            <Grid item xs={6} sm={4} md={2}>
-              <FormControlLabel
-                control={<Switch checked={formData.passportAvailable} name="passportAvailable" onChange={handleChange} color="primary" />}
-                label={<Typography variant="body2" sx={{ fontWeight: 600, fontSize: 12 }}>Passport Available</Typography>}
-              />
-            </Grid>
-
-            <Grid item xs={6} sm={4} md={2}>
-              <FormControlLabel
-                control={<Switch checked={formData.travelInsuranceRequired} name="travelInsuranceRequired" onChange={handleChange} color="primary" />}
-                label={<Typography variant="body2" sx={{ fontWeight: 600, fontSize: 12 }}>Travel Insurance</Typography>}
-              />
+            <Grid item xs={12} sm={4} md={4}>
+              <FieldLabel label="Travel Insurance — Yes/No" />
+              <TextField
+                select
+                fullWidth
+                name="travelInsuranceRequired"
+                value={formData.travelInsuranceRequired}
+                onChange={handleChange}
+                size="small"
+              >
+                <MenuItem value="Yes">Yes</MenuItem>
+                <MenuItem value="No">No</MenuItem>
+              </TextField>
             </Grid>
 
             {/* Section 4: Lead Management */}
             <Grid item xs={12} sx={{ mt: 1 }}>
-              <Typography variant="caption" sx={{ fontWeight: 800, color: '#2563EB', textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', mb: 0.5 }}>
-                4. Lead Management & Assignment
+              <Typography
+                variant="caption"
+                sx={{
+                  fontWeight: 800,
+                  color: '#2563EB',
+                  textTransform: 'uppercase',
+                  letterSpacing: 0.5,
+                  display: 'block',
+                  mb: 0.5,
+                  fontSize: 12,
+                }}
+              >
+                4. Lead Management
               </Typography>
               <Divider />
             </Grid>
 
             <Grid item xs={12} sm={6} md={3}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', mb: 0.5, display: 'block', textTransform: 'uppercase', fontSize: 11 }}>
-                Lead Status
-              </Typography>
-              <TextField select fullWidth name="leadStatus" value={formData.leadStatus} onChange={handleChange} size="small">
+              <FieldLabel label="Lead Status" />
+              <TextField
+                select
+                fullWidth
+                name="leadStatus"
+                value={formData.leadStatus}
+                onChange={handleChange}
+                size="small"
+              >
                 {LEAD_STATUS_OPTIONS.map((opt) => (
-                  <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                  <MenuItem key={opt} value={opt}>
+                    {opt}
+                  </MenuItem>
                 ))}
               </TextField>
             </Grid>
 
             <Grid item xs={12} sm={6} md={3}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', mb: 0.5, display: 'block', textTransform: 'uppercase', fontSize: 11 }}>
-                Priority
-              </Typography>
-              <TextField select fullWidth name="priority" value={formData.priority} onChange={handleChange} size="small">
+              <FieldLabel label="Lead Stage" />
+              <TextField
+                select
+                fullWidth
+                name="leadStage"
+                value={formData.leadStage}
+                onChange={handleChange}
+                size="small"
+              >
+                {LEAD_STAGE_OPTIONS.map((opt) => (
+                  <MenuItem key={opt} value={opt}>
+                    {opt}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Grid>
+
+            <Grid item xs={12} sm={6} md={3}>
+              <FieldLabel label="Priority" />
+              <TextField
+                select
+                fullWidth
+                name="priority"
+                value={formData.priority}
+                onChange={handleChange}
+                size="small"
+              >
                 {PRIORITY_OPTIONS.map((opt) => (
-                  <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                  <MenuItem key={opt} value={opt}>
+                    {opt}
+                  </MenuItem>
                 ))}
               </TextField>
             </Grid>
 
             <Grid item xs={12} sm={6} md={3}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', mb: 0.5, display: 'block', textTransform: 'uppercase', fontSize: 11 }}>
-                Assigned Executive
-              </Typography>
-              <TextField select fullWidth name="assignedSalesUser" value={formData.assignedSalesUser} onChange={handleChange} size="small">
+              <FieldLabel label="Assigned Executive" required />
+              <TextField
+                select
+                fullWidth
+                name="assignedSalesUser"
+                value={formData.assignedSalesUser}
+                onChange={handleChange}
+                size="small"
+                required
+              >
                 {SALES_USERS.map((usr) => (
-                  <MenuItem key={usr} value={usr}>{usr}</MenuItem>
+                  <MenuItem key={usr} value={usr}>
+                    {usr}
+                  </MenuItem>
                 ))}
               </TextField>
             </Grid>
 
             <Grid item xs={12} sm={6} md={3}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', mb: 0.5, display: 'block', textTransform: 'uppercase', fontSize: 11 }}>
-                Lead Source
-              </Typography>
-              <TextField select fullWidth name="source" value={formData.source} onChange={handleChange} size="small">
+              <FieldLabel label="Lead Source" required />
+              <TextField
+                select
+                fullWidth
+                name="source"
+                value={formData.source}
+                onChange={handleChange}
+                size="small"
+                required
+              >
                 {SOURCE_OPTIONS.map((opt) => (
-                  <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                  <MenuItem key={opt} value={opt}>
+                    {opt}
+                  </MenuItem>
                 ))}
               </TextField>
             </Grid>
 
-            <Grid item xs={12} sm={6} md={4}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', mb: 0.5, display: 'block', textTransform: 'uppercase', fontSize: 11 }}>
-                Expected Booking Date
-              </Typography>
-              <TextField fullWidth type="date" name="expectedBookingDate" value={formData.expectedBookingDate} onChange={handleChange} size="small" InputLabelProps={{ shrink: true }} />
+            <Grid item xs={12} sm={6} md={3}>
+              <FieldLabel label="Expected Booking Date" />
+              <TextField
+                fullWidth
+                type="date"
+                name="expectedBookingDate"
+                value={formData.expectedBookingDate}
+                onChange={handleChange}
+                size="small"
+                InputLabelProps={{ shrink: true }}
+              />
             </Grid>
 
-            <Grid item xs={12} sm={6} md={8}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', mb: 0.5, display: 'block', textTransform: 'uppercase', fontSize: 11 }}>
-                Probability ({formData.probabilityPct}%)
-              </Typography>
+            <Grid item xs={12} sm={6} md={3}>
+              <FieldLabel label="Estimated Deal Value ₹" />
+              <TextField
+                fullWidth
+                type="number"
+                name="estimatedDealValue"
+                placeholder="e.g. 150000"
+                value={formData.estimatedDealValue}
+                onChange={handleChange}
+                size="small"
+                InputProps={{
+                  startAdornment: <InputAdornment position="start">₹</InputAdornment>,
+                }}
+              />
+            </Grid>
+
+            {/* Change #2: Probability (%) — Default: 50% */}
+            <Grid item xs={12} sm={6} md={3}>
+              <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 0.5 }}>
+                <FieldLabel label="Probability (%)" />
+                <Chip
+                  label={`${formData.probabilityPct}%`}
+                  size="small"
+                  sx={{ height: 20, fontSize: 11, fontWeight: 700, bgcolor: '#EFF6FF', color: '#2563EB' }}
+                />
+              </Stack>
               <Slider
                 value={formData.probabilityPct}
                 onChange={(e, val) => setFormData((prev) => ({ ...prev, probabilityPct: val }))}
@@ -532,95 +962,195 @@ export default function AddLeadModal() {
                 marks
                 min={0}
                 max={100}
-                sx={{ color: '#3B82F6' }}
+                sx={{ color: '#3B82F6', mt: 0.5 }}
               />
             </Grid>
 
-            {/* Section 5: Follow-up Information */}
+            {/* Section 5: Follow-up */}
             <Grid item xs={12} sx={{ mt: 1 }}>
-              <Typography variant="caption" sx={{ fontWeight: 800, color: '#2563EB', textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', mb: 0.5 }}>
-                5. Follow-up Information
+              <Typography
+                variant="caption"
+                sx={{
+                  fontWeight: 800,
+                  color: '#2563EB',
+                  textTransform: 'uppercase',
+                  letterSpacing: 0.5,
+                  display: 'block',
+                  mb: 0.5,
+                  fontSize: 12,
+                }}
+              >
+                5. Follow-up
               </Typography>
               <Divider />
             </Grid>
 
             <Grid item xs={12} sm={6} md={4}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', mb: 0.5, display: 'block', textTransform: 'uppercase', fontSize: 11 }}>
-                Last Contact Date
-              </Typography>
-              <TextField fullWidth type="date" name="lastContactDate" value={formData.lastContactDate} onChange={handleChange} size="small" InputLabelProps={{ shrink: true }} />
+              <FieldLabel label="Last Contact Date" />
+              <TextField
+                fullWidth
+                type="date"
+                name="lastContactDate"
+                value={formData.lastContactDate}
+                onChange={handleChange}
+                size="small"
+                InputLabelProps={{ shrink: true }}
+              />
             </Grid>
 
             <Grid item xs={12} sm={6} md={4}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', mb: 0.5, display: 'block', textTransform: 'uppercase', fontSize: 11 }}>
-                Next Follow-up Date
-              </Typography>
-              <TextField fullWidth type="date" name="nextFollowupDate" value={formData.nextFollowupDate} onChange={handleChange} size="small" InputLabelProps={{ shrink: true }} />
+              <FieldLabel label="Next Follow-up Date" />
+              <TextField
+                fullWidth
+                type="date"
+                name="nextFollowupDate"
+                value={formData.nextFollowupDate}
+                onChange={handleChange}
+                size="small"
+                InputLabelProps={{ shrink: true }}
+              />
             </Grid>
 
             <Grid item xs={12} sm={6} md={4}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', mb: 0.5, display: 'block', textTransform: 'uppercase', fontSize: 11 }}>
-                Follow-up Mode
-              </Typography>
-              <TextField select fullWidth name="followupMode" value={formData.followupMode} onChange={handleChange} size="small">
+              <FieldLabel label="Follow-up Mode" />
+              <TextField
+                select
+                fullWidth
+                name="followupMode"
+                value={formData.followupMode}
+                onChange={handleChange}
+                size="small"
+              >
                 {FOLLOWUP_MODES.map((opt) => (
-                  <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                  <MenuItem key={opt} value={opt}>
+                    {opt}
+                  </MenuItem>
                 ))}
               </TextField>
             </Grid>
 
             <Grid item xs={12}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', mb: 0.5, display: 'block', textTransform: 'uppercase', fontSize: 11 }}>
-                Follow-up Notes
-              </Typography>
-              <TextField fullWidth multiline rows={2} name="followupNotes" placeholder="Enter follow-up conversation notes..." value={formData.followupNotes} onChange={handleChange} />
+              <FieldLabel label="Follow-up Notes" />
+              <TextField
+                fullWidth
+                multiline
+                rows={2}
+                name="followupNotes"
+                placeholder="Enter notes about recent interactions or client responses..."
+                value={formData.followupNotes}
+                onChange={handleChange}
+              />
             </Grid>
 
-            {/* Section 6: Customer Requirements */}
+            {/* Section 6: Requirements */}
             <Grid item xs={12} sx={{ mt: 1 }}>
-              <Typography variant="caption" sx={{ fontWeight: 800, color: '#2563EB', textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', mb: 0.5 }}>
-                6. Customer Requirements
+              <Typography
+                variant="caption"
+                sx={{
+                  fontWeight: 800,
+                  color: '#2563EB',
+                  textTransform: 'uppercase',
+                  letterSpacing: 0.5,
+                  display: 'block',
+                  mb: 0.5,
+                  fontSize: 12,
+                }}
+              >
+                6. Requirements
               </Typography>
               <Divider />
             </Grid>
 
             <Grid item xs={12}>
+              <FieldLabel label="Customer Requirements" />
               <TextField
                 fullWidth
                 multiline
                 rows={3}
                 name="customerRequirements"
-                placeholder="e.g. Customer wants a 5N/6D Goa package. Budget around ₹45,000. Needs beach-facing hotel. Flight required from Delhi."
+                placeholder="e.g. 5N/6D Package required. Prefers beach villa, flight included from Delhi."
                 value={formData.customerRequirements}
                 onChange={handleChange}
               />
             </Grid>
 
-            {/* Section 7: Internal Notes */}
-            <Grid item xs={12} sx={{ mt: 1 }}>
-              <Typography variant="caption" sx={{ fontWeight: 800, color: '#D97706', textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', mb: 0.5 }}>
-                7. Internal Notes (Staff Only)
-              </Typography>
-              <Divider />
-            </Grid>
-
             <Grid item xs={12}>
+              <FieldLabel label="Internal Notes" />
               <TextField
                 fullWidth
                 multiline
                 rows={2}
                 name="internalNotes"
-                placeholder="e.g. Customer prefers evening calls. Price-sensitive. Interested in offers."
+                placeholder="e.g. VIP client reference. Price sensitive. Prefers calls after 6 PM."
                 value={formData.internalNotes}
                 onChange={handleChange}
                 sx={{ bgcolor: '#FFFBEB' }}
               />
             </Grid>
+
+            {/* Section 7: Customer Classification */}
+            <Grid item xs={12} sx={{ mt: 1 }}>
+              <Typography
+                variant="caption"
+                sx={{
+                  fontWeight: 800,
+                  color: '#2563EB',
+                  textTransform: 'uppercase',
+                  letterSpacing: 0.5,
+                  display: 'block',
+                  mb: 0.5,
+                  fontSize: 12,
+                }}
+              >
+                7. Customer Classification
+              </Typography>
+              <Divider />
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <FieldLabel label="Customer Type (Individual / Corporate / B2B)" />
+              <TextField
+                select
+                fullWidth
+                name="customerType"
+                value={formData.customerType}
+                onChange={handleChange}
+                size="small"
+              >
+                {CUSTOMER_TYPE_OPTIONS.map((opt) => (
+                  <MenuItem key={opt} value={opt}>
+                    {opt}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <FieldLabel label="Customer Category (New / Existing / Repeat / VIP)" />
+              <TextField
+                select
+                fullWidth
+                name="customerCategory"
+                value={formData.customerCategory}
+                onChange={handleChange}
+                size="small"
+              >
+                {CUSTOMER_CATEGORY_OPTIONS.map((opt) => (
+                  <MenuItem key={opt} value={opt}>
+                    {opt}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Grid>
           </Grid>
         </DialogContent>
 
-        <DialogActions sx={{ px: 3, pb: 2, pt: 1, gap: 1 }}>
-          <Button onClick={closeAddModal} variant="text" sx={{ color: '#64748B', fontWeight: 600, textTransform: 'none', px: 2 }}>
+        <DialogActions sx={{ px: 3, pb: 2, pt: 1, gap: 1, borderTop: '1px solid #E2E8F0' }}>
+          <Button
+            onClick={closeAddModal}
+            variant="text"
+            sx={{ color: '#64748B', fontWeight: 600, textTransform: 'none', px: 2 }}
+          >
             Cancel
           </Button>
           <Button
@@ -633,14 +1163,16 @@ export default function AddLeadModal() {
               borderRadius: '8px',
               px: 3,
               py: 1,
-              fontWeight: 600,
+              fontWeight: 700,
               textTransform: 'none',
             }}
           >
-            + Save Complete Lead
+            + Save New Lead
           </Button>
         </DialogActions>
       </form>
     </Dialog>
   );
 }
+
+

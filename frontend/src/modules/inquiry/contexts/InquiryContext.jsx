@@ -61,8 +61,8 @@ export const INITIAL_LEADS = [
     assignedSalesUser: 'Priya Nair',
     salesExecutive: 'Priya Nair',
     assignedOpsUser: 'Amit Kumar',
-    source: 'Manual',
-    leadSource: 'Manual',
+    source: 'whatsapp',
+    leadSource: 'whatsapp',
     expectedBookingDate: '2026-05-20',
     probabilityPct: 75,
 
@@ -78,6 +78,14 @@ export const INITIAL_LEADS = [
 
     // Section 7: Internal Notes
     internalNotes: 'Customer prefers evening calls after 6 PM. Price-sensitive regarding flight upgrades.',
+
+    // Channel specific metadata
+    whatsappChatHistory: [
+      { sender: 'client', text: 'Hi! I saw your Bali family package on your site. Can you share details for 4 pax?', time: '10:30 AM' },
+      { sender: 'bot', text: 'Hello Ritika! Thanks for contacting Voyage Travel. We have amazing 6N/7D Bali resort packages starting from ₹85k/pax.', time: '10:31 AM' },
+      { sender: 'client', text: 'Great, we have 2 adults and 2 kids (ages 5 and 8). Looking for June 10th departure.', time: '10:35 AM' },
+      { sender: 'agent', text: 'Shared customized villa package details via PDF. Let me know if you would like to schedule a call.', time: '11:15 AM' },
+    ],
 
     // Operational state metadata
     date: '04-May-26 09:40',
@@ -150,6 +158,7 @@ export const INITIAL_LEADS = [
     assignedOpsUser: 'Vikram Singh',
     source: 'Website',
     leadSource: 'Website',
+    webFormName: 'Honeymoon Special Landing Page Form',
     expectedBookingDate: '2026-05-15',
     probabilityPct: 90,
 
@@ -237,6 +246,9 @@ export const INITIAL_LEADS = [
     assignedOpsUser: 'Amit Kumar',
     source: 'Repeat Customers',
     leadSource: 'Repeat Customers',
+    pastTripsCount: 3,
+    loyaltyTier: 'VIP Platinum',
+    lifetimeSpend: '₹14,50,000',
     expectedBookingDate: '2026-06-01',
     probabilityPct: 50,
 
@@ -263,6 +275,89 @@ export const INITIAL_LEADS = [
     financeFocus: 'Advance Received',
     itineraryState: 'Locked',
     activeStatus: 'Active',
+  },
+  {
+    id: 'Q/26/1961925',
+
+    // Section 1: Basic Information
+    name: 'Kavya Singhania',
+    clientName: 'Kavya Singhania',
+    contactPhone: '+91 97110 88990',
+    phone: '+91 97110 88990',
+    contactEmail: 'kavya.s@meta-lead.com',
+    email: 'kavya.s@meta-lead.com',
+    whatsappNumber: '+91 97110 88990',
+
+    // Section 2: Travel Information
+    destination: 'Dubai',
+    destinations: ['Dubai, UAE'],
+    departureCity: 'Delhi',
+    travelStart: '20-Jun-26',
+    travelEnd: '25-Jun-26',
+    departureDate: '2026-06-20',
+    returnDate: '2026-06-25',
+    pax: 2,
+    totalPax: 2,
+    adults: 2,
+    children: 0,
+    travelPurpose: 'Leisure',
+
+    // Section 3: Customer Preferences
+    budget: 'INR 1.8L - 2.2L',
+    estimatedDealValue: 190000,
+    hotelCategory: '5★',
+
+    // Section 4: Lead Management
+    status: 'New',
+    leadStatus: 'New',
+    priority: 'Hot',
+    source: 'Instagram / Meta Ads',
+    leadSource: 'Instagram / Meta Ads',
+    adCampaignName: 'Dubai Summer Luxury Deals 2026',
+    adPlatform: 'Instagram DM',
+    assignedSalesUser: 'Rahul Sharma',
+
+    date: '05-May-26 14:10',
+    registrationDate: '2026-05-05T14:10:00+05:30',
+    lastUpdated: '05-May-26 14:10',
+  },
+  {
+    id: 'Q/26/1961926',
+
+    // Section 1: Basic Information
+    name: 'Vikramaditya Travels (B2B)',
+    clientName: 'Vikramaditya Travels (B2B)',
+    contactPhone: '+91 98111 22334',
+    phone: '+91 98111 22334',
+    contactEmail: 'agent@vikramadityatravels.com',
+    email: 'agent@vikramadityatravels.com',
+
+    // Section 2: Travel Information
+    destination: 'Vietnam & Cambodia',
+    destinations: ['Vietnam', 'Cambodia'],
+    departureCity: 'Kolkata',
+    travelStart: '10-Aug-26',
+    travelEnd: '18-Aug-26',
+    pax: 8,
+    totalPax: 8,
+    adults: 8,
+    travelPurpose: 'Group',
+
+    // Section 3 & 4
+    budget: 'INR 6.4L Total',
+    estimatedDealValue: 640000,
+    status: 'Interested',
+    priority: 'Warm',
+    source: 'B2B Partners',
+    leadSource: 'B2B Partners',
+    partnerAgencyName: 'Royal Travels Delhi (B2B)',
+    agentRefCode: 'B2B-ROYAL-402',
+    commissionPct: '12%',
+    assignedSalesUser: 'Ananya Roy',
+
+    date: '05-May-26 16:45',
+    registrationDate: '2026-05-05T16:45:00+05:30',
+    lastUpdated: '05-May-26 16:45',
   },
 ];
 
@@ -352,7 +447,8 @@ export function InquiryProvider({ children }) {
       budget: leadData.budget || 'INR 1.5L - 2.5L',
       estimatedDealValue: leadData.estimatedDealValue || 150000,
       hotelCategory: leadData.hotelCategory || '4★',
-      mealPreference: leadData.mealPreference || 'Breakfast Only',
+      mealPreference: leadData.mealPreference || 'Breakfast Only (CP)',
+      transportationRequired: leadData.transportationRequired || 'Private Cab',
       flightRequired: Boolean(leadData.flightRequired),
       trainRequired: Boolean(leadData.trainRequired),
       cabRequired: Boolean(leadData.cabRequired),
@@ -363,7 +459,8 @@ export function InquiryProvider({ children }) {
       // Section 4: Lead Management
       status: leadData.leadStatus || leadData.status || 'New',
       leadStatus: leadData.leadStatus || leadData.status || 'New',
-      stage: leadData.stage || 'New',
+      stage: leadData.leadStage || leadData.stage || 'New Lead',
+      leadStage: leadData.leadStage || leadData.stage || 'New Lead',
       priority: leadData.priority || leadData.temperature || 'Warm',
       temperature: leadData.temperature || leadData.priority || 'Warm',
       assignedSalesUser: leadData.assignedSalesUser || leadData.salesExecutive || 'Priya Nair',
@@ -384,8 +481,10 @@ export function InquiryProvider({ children }) {
       description: leadData.customerRequirements || leadData.description || '',
       customerRequirements: leadData.customerRequirements || leadData.description || '',
 
-      // Section 7: Internal Notes
+      // Section 7: Internal Notes & Classification
       internalNotes: leadData.internalNotes || '',
+      customerType: leadData.customerType || 'Individual',
+      customerCategory: leadData.customerCategory || 'New',
 
       // Operational state metadata
       date: formattedDate,
@@ -424,6 +523,7 @@ export function InquiryProvider({ children }) {
             updatedFields.assignedSalesUser || updatedFields.salesExecutive || lead.assignedSalesUser;
           const travelPurpose =
             updatedFields.travelPurpose || updatedFields.inquiryType || updatedFields.requirement || lead.travelPurpose;
+          const leadStage = updatedFields.leadStage || updatedFields.stage || lead.leadStage || 'New Lead';
 
           return {
             ...lead,
@@ -443,6 +543,8 @@ export function InquiryProvider({ children }) {
             inquiryType: travelPurpose,
             requirement: travelPurpose,
             packageType: travelPurpose,
+            leadStage,
+            stage: leadStage,
             lastUpdated: formattedDate,
           };
         }

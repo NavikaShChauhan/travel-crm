@@ -77,7 +77,10 @@ function SidebarItem({
   const itemStyle = {
     borderRadius: `${SIDEBAR_ITEM_RADIUS}px`,
     minHeight: SIDEBAR_ITEM_HEIGHT,
-    width: '100%',
+    // Let the selected top-level item extend into the curved sidebar edge.
+    // This creates the tab treatment shown in the reference design without
+    // changing the usable width of the navigation list.
+    width: isActive && !collapsed ? 'calc(100% + 20px)' : '100%',
     px: collapsed ? 1.25 : 2,
     py: 1,
     my: 0.25,
@@ -87,6 +90,8 @@ function SidebarItem({
     color: isActive ? '#FFFFFF' : '#475569',
     background: isActive ? 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)' : 'transparent',
     boxShadow: isActive ? '0 8px 20px rgba(139, 92, 246, 0.3)' : 'none',
+    position: 'relative',
+    zIndex: isActive ? 1 : 0,
     transition: 'all 200ms ease',
     '&:hover': {
       borderRadius: `${SIDEBAR_ITEM_RADIUS}px`,
@@ -234,7 +239,7 @@ function NavList({ collapsed, onNavigate }) {
   };
 
   return (
-    <List sx={{ px: collapsed ? 1.25 : 2, py: 1 }}>
+    <List sx={{ px: collapsed ? 1.25 : 2, py: 1, overflow: 'visible' }}>
       {NAV_ITEMS.map((item) => {
         const { label, path, icon: Icon, children } = item;
         const isActiveParent = pathname === path || children?.some(({ path: childPath, children: subChildren }) =>
@@ -362,6 +367,21 @@ export function DesktopSidebar() {
         borderRight: '1px solid #F1F5F9',
         boxShadow: '4px 0 24px rgba(99, 102, 241, 0.03)',
         zIndex: 100,
+        overflow: 'visible',
+        // A small canvas-coloured cut-out makes the change from the white
+        // sidebar to the workspace header feel intentionally curved.
+        '&::after': {
+          content: '""',
+          position: 'absolute',
+          top: 70,
+          right: -30,
+          width: 30,
+          height: 30,
+          bgcolor: '#F4F5FB',
+          borderTopLeftRadius: '30px',
+          pointerEvents: 'none',
+          zIndex: 2,
+        },
       }}
     >
       <Box
