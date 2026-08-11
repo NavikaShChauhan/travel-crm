@@ -42,3 +42,13 @@ export const remove = async (id) => {
   // TODO: return (await itineraryApi.remove(id)).data
   throw new Error('itineraryService.remove is not implemented yet');
 };
+
+const confirmedBookingsStore = [];
+
+export const registerConfirmedBooking = (bookingData) => {
+  confirmedBookingsStore.push(bookingData);
+  return { success: true, bookingId: bookingData.bookingId, itineraryId: bookingData.itineraryId };
+};
+
+export const getConfirmedBookings = () => confirmedBookingsStore;
+

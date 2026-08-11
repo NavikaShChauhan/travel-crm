@@ -107,10 +107,19 @@ export const ROOM_TYPE_OPTIONS = [
 ];
 
 export const MEAL_PLAN_OPTIONS = [
-  'Breakfast Only',
-  'Half Board (Breakfast & Dinner)',
-  'Full Board (All Meals Included)',
-  'All Inclusive (Meals & Beverages)',
+  'Room Only (EP)',
+  'Breakfast (CP)',
+  'Half Board (MAP)',
+  'Full Board (AP)',
+  'All Inclusive',
+];
+
+export const TRANSPORT_MENU_OPTIONS = [
+  'Bus / Shuttle from Airport',
+  'Car',
+  'Luxury Vehicle',
+  'Van',
+  'Local Taxi',
 ];
 
 export const AIRLINE_OPTIONS = [
@@ -738,7 +747,25 @@ export default function CreateProposalWizard({ open, onClose, lead, onSavePropos
                   </Typography>
                 </Stack>
                 <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6}>
+                  <Grid item xs={12} sm={4}>
+                    <TextField
+                      select
+                      label="Transport Menu"
+                      value={formData.transportMenu || ''}
+                      onChange={(e) => handleChange('transportMenu', e.target.value)}
+                      fullWidth
+                    >
+                      <MenuItem value="">
+                        <em>Select Transport ▼</em>
+                      </MenuItem>
+                      {TRANSPORT_MENU_OPTIONS.map((tm) => (
+                        <MenuItem key={tm} value={tm}>
+                          {tm}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                  </Grid>
+                  <Grid item xs={12} sm={4}>
                     <TextField
                       select
                       label="Airport Transfer"
@@ -753,7 +780,7 @@ export default function CreateProposalWizard({ open, onClose, lead, onSavePropos
                       ))}
                     </TextField>
                   </Grid>
-                  <Grid item xs={12} sm={6}>
+                  <Grid item xs={12} sm={4}>
                     <TextField
                       select
                       label="Intercity Transfer"

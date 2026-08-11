@@ -42,3 +42,17 @@ export const remove = async (id) => {
   // TODO: return (await operationsApi.remove(id)).data
   throw new Error('operationsService.remove is not implemented yet');
 };
+
+const operationsHandoverStore = [];
+
+export const registerConfirmedBooking = (bookingData) => {
+  operationsHandoverStore.push({
+    ...bookingData,
+    handoverDate: new Date().toISOString(),
+    opsStatus: 'Pending Allocation',
+  });
+  return { success: true, bookingId: bookingData.bookingId };
+};
+
+export const getHandedOverBookings = () => operationsHandoverStore;
+

@@ -9,18 +9,36 @@ import {
   DialogActions,
   Divider,
   Drawer,
+  Grid,
   IconButton,
   Menu,
   MenuItem,
   Stack,
   TextField,
+  ToggleButton,
+  ToggleButtonGroup,
   Typography,
 } from '@mui/material';
-import { MdOutlineClose, MdAdd, MdMoreHoriz, MdEdit, MdDelete, MdOutlineDelete } from 'react-icons/md';
+import {
+  MdOutlineClose,
+  MdAdd,
+  MdMoreHoriz,
+  MdEdit,
+  MdDelete,
+  MdOutlineDelete,
+  MdCall,
+  MdWhatsapp,
+  MdEmail,
+  MdSms,
+  MdSend,
+  MdOutlineSchedule,
+  MdHistory,
+} from 'react-icons/md';
 import { formatCurrency, formatDate } from '@utils/formatters';
 import { tokens } from '@styles/theme';
 import EditLeadModal from './EditLeadModal';
 import CreateProposalWizard from './CreateProposalWizard';
+import { MODE_TEMPLATES, generateTemplateContent } from '../data/followUpTemplates';
 
 const FALLBACK_VALUE = '—';
 
@@ -46,22 +64,56 @@ function DetailSection({ title, fields }) {
   );
 }
 
+// Activity Pipeline Timeline with exact Timestamps + Current Pointer (Task 2 & 3)
 const initialTimeline = [
-  'Inquiry Created',
-  'Lead Assigned',
-  'Proposal Created',
-  'Proposal Sent',
-  'Proposal Viewed',
-  'Call Completed',
-  'Negotiation Started',
-  'Revised Proposal Sent',
-  'Soft Confirm',
+  { event: 'Inquiry Created', timestamp: '01 Aug · 10:15 AM', status: 'Completed', completed: true },
+  { event: 'Lead Assigned', timestamp: '01 Aug · 10:30 AM', status: 'Completed', completed: true },
+  { event: 'Proposal Created', timestamp: '02 Aug · 11:45 AM', status: 'Completed', completed: true },
+  { event: 'Proposal Sent', timestamp: '02 Aug · 02:15 PM', status: 'Completed', completed: true },
+  { event: 'Proposal Viewed', timestamp: '02 Aug · 04:10 PM', status: 'Completed', completed: true },
+  { event: 'Follow-up Planner', timestamp: '03 Aug · 02:15 PM', status: 'Current Stage', completed: true, isCurrent: true },
+  { event: 'Negotiation', timestamp: 'Upcoming', status: 'Upcoming', completed: false },
+  { event: 'Soft Confirm', timestamp: 'Upcoming', status: 'Upcoming', completed: false },
+  { event: 'Confirmed Booking', timestamp: 'Upcoming', status: 'Upcoming', completed: false },
 ];
 
 const initialNotes = [
   { date: '03 Aug 2026', author: 'Priya Sharma', text: 'Customer prefers morning flights.' },
   { date: '02 Aug 2026', author: 'Priya Sharma', text: 'Interested in 4-star or 5-star hotels.' },
   { date: '01 Aug 2026', author: 'Rahul Jain', text: 'Requested honeymoon room decoration.' },
+];
+
+const initialCommunications = [
+  {
+    id: 'ACT-901',
+    activityId: 'ACT-901',
+    followUpId: 'FLP-301',
+    customerId: 'CUST-1001',
+    leadId: 'LD-1001',
+    proposalId: 'PR-2601',
+    type: 'Call',
+    template: 'Proposal Follow-up',
+    title: 'Call logged with Rohan & Anjali Mehta',
+    details: 'Discussed connecting rooms requirement and initial flight pricing.',
+    timestamp: '03 Aug · 10:15 AM',
+    status: 'Completed',
+    createdBy: 'Priya Sharma',
+  },
+  {
+    id: 'ACT-902',
+    activityId: 'ACT-902',
+    followUpId: 'FLP-302',
+    customerId: 'CUST-1001',
+    leadId: 'LD-1001',
+    proposalId: 'PR-2601',
+    type: 'WhatsApp',
+    template: 'Proposal Sent',
+    title: 'WhatsApp message sent to Rohan & Anjali Mehta',
+    details: 'Shared Bali luxury villa proposal PDF link.',
+    timestamp: '02 Aug · 04:30 PM',
+    status: 'Completed',
+    createdBy: 'Priya Sharma',
+  },
 ];
 
 function LeadSummaryDrawer({ lead, open, onClose, onUpdateLead, onDeleteLead }) {
@@ -73,9 +125,17 @@ function LeadSummaryDrawer({ lead, open, onClose, onUpdateLead, onDeleteLead }) 
 
   const [notes, setNotes] = useState(initialNotes);
   const [note, setNote] = useState({ title: '', text: '', category: 'General' });
-  const [schedule, setSchedule] = useState({ type: 'Call', date: '', time: '', message: '', priority: 'Medium' });
   const [menuAnchor, setMenuAnchor] = useState(null);
   const [savedMessage, setSavedMessage] = useState('');
+
+  // Schedule Communication States (Task 5 & 8)
+  const [commMode, setCommMode] = useState('Call');
+  const [commTemplate, setCommTemplate] = useState('');
+  const [commSubject, setCommSubject] = useState('');
+  const [commMessage, setCommMessage] = useState('');
+  const [commDate, setCommDate] = useState('2026-08-05');
+  const [commTime, setCommTime] = useState('11:00');
+  const [leadCommunications, setLeadCommunications] = useState(initialCommunications);
 
   useEffect(() => {
     if (lead) {
@@ -197,10 +257,82 @@ function LeadSummaryDrawer({ lead, open, onClose, onUpdateLead, onDeleteLead }) 
     setTimeout(() => setSavedMessage(''), 4000);
   };
 
-  const handleSaveSchedule = (sendNow = false) => {
-    setSchedule((prev) => ({ ...prev, date: sendNow ? 'Today' : prev.date }));
-    setMode('activity');
-    setSavedMessage(sendNow ? 'Follow-up sent successfully!' : 'Follow-up scheduled.');
+  // Handle Communication Template Change
+  const handleCommTemplateChange = (tmpl) => {
+    setCommTemplate(tmpl);
+    if (!tmpl || tmpl === 'Custom') {
+      setCommSubject('');
+      setCommMessage('');
+      return;
+    }
+    const content = generateTemplateContent(commMode, tmpl, {
+      customer: currentLead.name,
+      destination: destinationText,
+      proposalId: currentLead.proposalId || 'PR-2601',
+      amount: formatCurrency(budgetVal),
+      executive: currentLead.salesExecutive || 'Priya Sharma',
+    });
+    setCommSubject(content.subject || '');
+    setCommMessage(content.message || '');
+  };
+
+  // Handle Communication Mode Change
+  const handleCommModeChange = (newMode) => {
+    if (!newMode) return;
+    setCommMode(newMode);
+    setCommTemplate('');
+    setCommSubject('');
+    setCommMessage('');
+  };
+
+  // Dispatch Communication Activity (Send Now or Schedule) - Unified Service Call
+  const dispatchCommunicationRecord = (isSendNow) => {
+    const actId = `ACT-${Math.floor(100 + Math.random() * 900)}`;
+    const flpId = `FLP-${Math.floor(100 + Math.random() * 900)}`;
+    const custId = currentLead.customerId || `CUST-${currentLead.id.replace('LD-', '')}`;
+    const propId = currentLead.proposalId || 'PR-2601';
+
+    const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const timestamp = isSendNow ? `Today · ${nowStr}` : `${commDate} · ${commTime}`;
+
+    const newRecord = {
+      id: actId,
+      activityId: actId,
+      followUpId: flpId,
+      customerId: custId,
+      leadId: currentLead.id,
+      proposalId: propId,
+      type: commMode,
+      mode: commMode,
+      template: commTemplate || 'Custom',
+      title: `${commMode} ${isSendNow ? 'sent to' : 'scheduled for'} ${currentLead.name}`,
+      details: commSubject ? `Subject: ${commSubject} | ${commMessage}` : commMessage || `Logged ${commMode} communication`,
+      timestamp,
+      status: isSendNow ? 'Completed' : 'Scheduled',
+      createdBy: currentLead.salesExecutive || 'Priya Sharma',
+    };
+
+    // Add locally to lead communications
+    setLeadCommunications((prev) => [newRecord, ...prev]);
+
+    // Add to activity notes
+    setNotes((prev) => [
+      {
+        date: 'Today',
+        author: currentLead.salesExecutive || 'Priya Sharma',
+        text: `[${commMode} ${isSendNow ? 'Sent' : 'Scheduled'}] ${commSubject ? commSubject + ' - ' : ''}${commMessage || 'Communication logged'}`,
+      },
+      ...prev,
+    ]);
+
+    // Dispatch global custom event to sync with Follow Up module
+    try {
+      window.dispatchEvent(new CustomEvent('communication_activity_created', { detail: newRecord }));
+    } catch {
+      // safe fallback
+    }
+
+    setSavedMessage(isSendNow ? `${commMode} sent and logged successfully!` : `${commMode} follow-up scheduled for ${commDate}.`);
     setTimeout(() => setSavedMessage(''), 4000);
   };
 
@@ -338,32 +470,64 @@ function LeadSummaryDrawer({ lead, open, onClose, onUpdateLead, onDeleteLead }) 
             </Stack>
           )}
 
-          {/* Activity Mode */}
+          {/* Activity Mode with Timestamps & Current Pointer (Task 2 & 3) */}
           {mode === 'activity' && (
             <Stack spacing={2.5}>
               <Box>
-                <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.25 }}>
-                  Lead Progress Timeline
+                <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5 }}>
+                  Activity Pipeline Timeline
                 </Typography>
-                <Stack spacing={1.25}>
-                  {initialTimeline.map((event, index) => (
-                    <Stack key={event} direction="row" spacing={1.25} alignItems="center">
+                <Stack spacing={1.5}>
+                  {initialTimeline.map((item) => (
+                    <Stack
+                      key={item.event}
+                      direction="row"
+                      spacing={1.5}
+                      alignItems="center"
+                      sx={{
+                        p: item.isCurrent ? 1.25 : 0.75,
+                        borderRadius: 2,
+                        bgcolor: item.isCurrent ? 'rgba(47,143,134,0.08)' : 'transparent',
+                        border: item.isCurrent ? `1px solid ${tokens.color.teal500}` : 'none',
+                      }}
+                    >
                       <Box
                         sx={{
-                          width: 10,
-                          height: 10,
+                          width: 12,
+                          height: 12,
                           borderRadius: '50%',
-                          bgcolor: index < 5 ? tokens.color.teal500 : tokens.color.ink400,
+                          bgcolor: item.isCurrent
+                            ? tokens.color.teal500
+                            : item.completed
+                              ? tokens.color.navy700
+                              : tokens.color.ink400,
+                          boxShadow: item.isCurrent ? `0 0 0 4px ${tokens.color.teal500}33` : 'none',
                         }}
                       />
-                      <Box>
-                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                          {event}
-                        </Typography>
+                      <Box sx={{ flex: 1 }}>
+                        <Stack direction="row" spacing={1} alignItems="center">
+                          <Typography variant="body2" sx={{ fontWeight: item.isCurrent ? 700 : 600 }}>
+                            {item.isCurrent ? `◉ ${item.event}` : `● ${item.event}`}
+                          </Typography>
+                          {item.isCurrent && (
+                            <Chip
+                              size="small"
+                              label="Current Stage"
+                              color="primary"
+                              sx={{ height: 18, fontSize: '0.68rem', fontWeight: 700 }}
+                            />
+                          )}
+                        </Stack>
                         <Typography variant="caption" color="text.secondary">
-                          {index < 5 ? 'Completed' : 'Upcoming workflow step'}
+                          {item.status}
                         </Typography>
                       </Box>
+                      <Typography
+                        variant="caption"
+                        sx={{ fontWeight: 700, color: item.isCurrent ? tokens.color.teal500 : 'text.secondary' }}
+                      >
+                        {item.timestamp}
+                      </Typography>
                     </Stack>
                   ))}
                 </Stack>
@@ -402,67 +566,199 @@ function LeadSummaryDrawer({ lead, open, onClose, onUpdateLead, onDeleteLead }) 
             </Stack>
           )}
 
-          {/* Communication Mode */}
+          {/* Communication Mode (Task 5 & 8) */}
           {mode === 'communication' && (
-            <Stack spacing={2}>
-              <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                Schedule a Communication
-              </Typography>
-              <TextField
-                select
-                label="Communication Type"
-                value={schedule.type}
-                onChange={(e) => setSchedule((item) => ({ ...item, type: e.target.value }))}
-                fullWidth
-              >
-                {['Call', 'WhatsApp', 'Email', 'SMS'].map((val) => (
-                  <MenuItem key={val} value={val}>
-                    {val}
+            <Stack spacing={2.5}>
+              <Box>
+                <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>
+                  Schedule Communication for {currentLead.name}
+                </Typography>
+
+                {/* Mode Selector Toggles */}
+                <ToggleButtonGroup
+                  value={commMode}
+                  exclusive
+                  onChange={(_, val) => handleCommModeChange(val)}
+                  size="small"
+                  fullWidth
+                  sx={{ mb: 2 }}
+                >
+                  <ToggleButton value="Call" sx={{ fontWeight: 700 }}>
+                    <MdCall style={{ marginRight: 6 }} size={16} /> Call
+                  </ToggleButton>
+                  <ToggleButton value="WhatsApp" sx={{ fontWeight: 700 }}>
+                    <MdWhatsapp style={{ marginRight: 6 }} size={16} /> WhatsApp
+                  </ToggleButton>
+                  <ToggleButton value="Email" sx={{ fontWeight: 700 }}>
+                    <MdEmail style={{ marginRight: 6 }} size={16} /> Email
+                  </ToggleButton>
+                  <ToggleButton value="SMS" sx={{ fontWeight: 700 }}>
+                    <MdSms style={{ marginRight: 6 }} size={16} /> SMS
+                  </ToggleButton>
+                </ToggleButtonGroup>
+
+                {/* Mode-Specific Template Dropdown */}
+                <TextField
+                  select
+                  label="Select Template"
+                  value={commTemplate}
+                  onChange={(e) => handleCommTemplateChange(e.target.value)}
+                  fullWidth
+                  size="small"
+                  sx={{ mb: 2 }}
+                >
+                  <MenuItem value="">
+                    <em>Select Template ▼</em>
                   </MenuItem>
-                ))}
-              </TextField>
-              {schedule.type === 'Email' && <TextField label="Subject" fullWidth />}
-              <TextField
-                label="Message / Follow-up Notes"
-                multiline
-                minRows={3}
-                value={schedule.message}
-                onChange={(e) => setSchedule((item) => ({ ...item, message: e.target.value }))}
-                helperText="Templates: Proposal Reminder · Follow-up Reminder · Payment Reminder"
-                fullWidth
-              />
-              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5 }}>
+                  {(MODE_TEMPLATES[commMode] || []).map((tmpl) => (
+                    <MenuItem key={tmpl} value={tmpl}>
+                      {tmpl}
+                    </MenuItem>
+                  ))}
+                </TextField>
+
+                {/* Email Subject Field */}
+                {commMode === 'Email' && (
+                  <TextField
+                    label="Subject"
+                    size="small"
+                    value={commSubject}
+                    onChange={(e) => setCommSubject(e.target.value)}
+                    fullWidth
+                    sx={{ mb: 2 }}
+                  />
+                )}
+
+                {/* Message / Talking Points Field */}
                 <TextField
-                  label="Date"
-                  type="date"
-                  value={schedule.date}
-                  onChange={(e) => setSchedule((item) => ({ ...item, date: e.target.value }))}
-                  InputLabelProps={{ shrink: true }}
+                  label={commMode === 'Call' ? 'Talking Points / Call Notes' : 'Editable Message'}
+                  multiline
+                  minRows={3}
+                  value={commMessage}
+                  onChange={(e) => setCommMessage(e.target.value)}
+                  fullWidth
+                  size="small"
+                  placeholder={
+                    commMode === 'Call'
+                      ? 'e.g. 1. Discuss budget constraints. 2. Present villa upgrade options...'
+                      : 'Enter message text to send or schedule...'
+                  }
+                  sx={{ mb: 2 }}
                 />
-                <TextField
-                  label="Time"
-                  type="time"
-                  value={schedule.time}
-                  onChange={(e) => setSchedule((item) => ({ ...item, time: e.target.value }))}
-                  InputLabelProps={{ shrink: true }}
-                />
+
+                {/* Schedule Date & Time Pickers */}
+                <Grid container spacing={1.5} sx={{ mb: 2 }}>
+                  <Grid item xs={6}>
+                    <TextField
+                      label="Schedule Date"
+                      type="date"
+                      size="small"
+                      value={commDate}
+                      onChange={(e) => setCommDate(e.target.value)}
+                      fullWidth
+                      InputLabelProps={{ shrink: true }}
+                    />
+                  </Grid>
+                  <Grid item xs={6}>
+                    <TextField
+                      label="Schedule Time"
+                      type="time"
+                      size="small"
+                      value={commTime}
+                      onChange={(e) => setCommTime(e.target.value)}
+                      fullWidth
+                      InputLabelProps={{ shrink: true }}
+                    />
+                  </Grid>
+                </Grid>
+
+                {/* Action Buttons: Send Now & Schedule */}
+                <Stack direction="row" spacing={1.5} justifyContent="flex-end">
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    startIcon={<MdSend />}
+                    onClick={() => dispatchCommunicationRecord(true)}
+                  >
+                    Send Now
+                  </Button>
+                  <Button
+                    variant="contained"
+                    color="secondary"
+                    startIcon={<MdOutlineSchedule />}
+                    onClick={() => dispatchCommunicationRecord(false)}
+                  >
+                    Schedule
+                  </Button>
+                </Stack>
               </Box>
-              <TextField
-                select
-                label="Priority"
-                value={schedule.priority}
-                onChange={(e) => setSchedule((item) => ({ ...item, priority: e.target.value }))}
-                fullWidth
-              >
-                {['Low', 'Medium', 'High'].map((val) => (
-                  <MenuItem key={val} value={val}>
-                    {val}
-                  </MenuItem>
-                ))}
-              </TextField>
-              <Button size="small" variant="contained" onClick={() => handleSaveSchedule(false)}>
-                Schedule Follow-up
-              </Button>
+
+              <Divider />
+
+              {/* Communication History Section */}
+              <Box>
+                <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1.5 }}>
+                  <MdHistory size={18} color={tokens.color.navy700} />
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                    Communication History ({currentLead.name})
+                  </Typography>
+                </Stack>
+
+                <Stack spacing={1.25}>
+                  {leadCommunications.map((comm) => (
+                    <Box
+                      key={comm.id}
+                      sx={{
+                        p: 1.5,
+                        borderRadius: 2,
+                        bgcolor: 'background.default',
+                        border: '1px solid',
+                        borderColor: 'divider',
+                      }}
+                    >
+                      <Stack direction="row" justifyContent="space-between" alignItems="center">
+                        <Stack direction="row" spacing={1} alignItems="center">
+                          <Chip
+                            size="small"
+                            label={comm.type}
+                            color={
+                              comm.type === 'Call'
+                                ? 'primary'
+                                : comm.type === 'WhatsApp'
+                                  ? 'success'
+                                  : comm.type === 'Email'
+                                    ? 'info'
+                                    : 'warning'
+                            }
+                            sx={{ fontWeight: 700, height: 20 }}
+                          />
+                          <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                            {comm.title}
+                          </Typography>
+                        </Stack>
+                        <Chip
+                          size="small"
+                          label={comm.status}
+                          variant="outlined"
+                          color={comm.status === 'Completed' ? 'success' : 'secondary'}
+                          sx={{ height: 18, fontSize: '0.7rem' }}
+                        />
+                      </Stack>
+                      <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75, fontSize: '0.85rem' }}>
+                        {comm.details}
+                      </Typography>
+                      <Stack direction="row" justifyContent="space-between" sx={{ mt: 1 }}>
+                        <Typography variant="caption" color="text.secondary">
+                          {comm.timestamp} · {comm.createdBy}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {comm.activityId} · {comm.followUpId} · {comm.proposalId}
+                        </Typography>
+                      </Stack>
+                    </Box>
+                  ))}
+                </Stack>
+              </Box>
             </Stack>
           )}
 
@@ -522,7 +818,7 @@ function LeadSummaryDrawer({ lead, open, onClose, onUpdateLead, onDeleteLead }) 
               Add Note
             </Button>
             <Button size="small" variant="outlined" onClick={() => setMode('communication')}>
-              Schedule Follow-up
+              Schedule Communication
             </Button>
             <Button
               size="small"

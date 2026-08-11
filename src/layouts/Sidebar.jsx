@@ -174,6 +174,11 @@ function NavList({ collapsed, onNavigate }) {
     NAV_ITEMS.forEach((item) => {
       if (item.children) {
         init[item.path] = pathname.startsWith(item.path);
+        item.children.forEach((child) => {
+          if (child.children) {
+            init[child.path] = pathname.startsWith(child.path);
+          }
+        });
       }
     });
     return init;
@@ -183,18 +188,29 @@ function NavList({ collapsed, onNavigate }) {
     setExpanded((prev) => {
       const next = { ...prev };
       NAV_ITEMS.forEach((item) => {
-        if (item.children && !(item.path in prev)) {
-          next[item.path] = pathname.startsWith(item.path);
+        if (item.children) {
+          if (!(item.path in prev)) next[item.path] = pathname.startsWith(item.path);
+          item.children.forEach((child) => {
+            if (child.children && !(child.path in prev)) {
+              next[child.path] = pathname.startsWith(child.path);
+            }
+          });
         }
       });
       return next;
     });
   }, [pathname]);
 
+  const toggleExpanded = (path) => {
+    setExpanded((prev) => ({ ...prev, [path]: !prev[path] }));
+  };
+
   return (
     <List sx={{ px: collapsed ? 1 : 1.5, py: 1 }}>
       {NAV_ITEMS.map(({ label, path, icon: Icon, children }) => {
-        const isActiveParent = pathname === path || children?.some(({ path: childPath }) => pathname === childPath);
+        const isActiveParent = pathname === path || children?.some(({ path: childPath, children: subChildren }) =>
+          pathname === childPath || subChildren?.some(sub => pathname === sub.path)
+        );
         const isExpanded = Boolean(expanded[path]);
 
         const parentItem = (
@@ -207,7 +223,7 @@ function NavList({ collapsed, onNavigate }) {
             onClick={(event) => {
               if (children) {
                 event.preventDefault();
-                setExpanded((prev) => ({ ...prev, [path]: !prev[path] }));
+                toggleExpanded(path);
                 if (onNavigate) onNavigate();
               } else if (onNavigate) {
                 onNavigate();
@@ -236,18 +252,64 @@ function NavList({ collapsed, onNavigate }) {
               parentItem
             )}
             {!collapsed && isExpanded && children && (
-              <List disablePadding sx={{ pl: 2.5, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                {children.map(({ label: childLabel, path: childPath, icon: ChildIcon }) => (
-                  <SidebarItem
-                    key={childPath}
-                    label={childLabel}
-                    icon={ChildIcon}
-                    collapsed={collapsed}
-                    isActive={pathname === childPath}
-                    onClick={onNavigate}
-                    to={childPath}
-                  />
-                ))}
+              <List disablePadding sx={{ pl: 2, display: 'flex', flexDirection: 'column', gap: 0.5, mt: 0.5 }}>
+                {children.map(({ label: childLabel, path: childPath, icon: ChildIcon, children: subChildren }) => {
+                  const isChildExpanded = Boolean(expanded[childPath]);
+                  const isChildActive = pathname === childPath || subChildren?.some(s => pathname === s.path);
+
+                  if (subChildren) {
+                    return (
+                      <Box key={childPath}>
+                        <SidebarItem
+                          label={childLabel}
+                          icon={ChildIcon}
+                          collapsed={collapsed}
+                          isActive={isChildActive}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            toggleExpanded(childPath);
+                          }}
+                          isParent={true}
+                          chevron={
+                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', ml: 1 }}>
+                              <MdOutlineChevronRight
+                                size={16}
+                                style={{ transform: isChildExpanded ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }}
+                              />
+                            </Box>
+                          }
+                        />
+                        {isChildExpanded && (
+                          <List disablePadding sx={{ pl: 2, display: 'flex', flexDirection: 'column', gap: 0.5, mt: 0.5 }}>
+                            {subChildren.map(({ label: subLabel, path: subPath, icon: SubIcon }) => (
+                              <SidebarItem
+                                key={subPath}
+                                label={subLabel}
+                                icon={SubIcon}
+                                collapsed={collapsed}
+                                isActive={pathname === subPath}
+                                onClick={onNavigate}
+                                to={subPath}
+                              />
+                            ))}
+                          </List>
+                        )}
+                      </Box>
+                    );
+                  }
+
+                  return (
+                    <SidebarItem
+                      key={childPath}
+                      label={childLabel}
+                      icon={ChildIcon}
+                      collapsed={collapsed}
+                      isActive={pathname === childPath}
+                      onClick={onNavigate}
+                      to={childPath}
+                    />
+                  );
+                })}
               </List>
             )}
           </Box>
