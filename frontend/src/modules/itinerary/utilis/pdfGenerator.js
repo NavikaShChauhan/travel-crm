@@ -6,6 +6,36 @@ const formatCurrency = (amount) => {
   return `₹ ${(amount || 0).toLocaleString('en-IN')}`;
 };
 
+const getServicesForDay = (dayNum, servicesList = []) => {
+  const result = [];
+  (servicesList || []).forEach((s) => {
+    const start = s.dayNumber || 1;
+    const duration = parseInt(s.nights || s.days || 1, 10);
+    if (dayNum === start) {
+      result.push({ ...s, isStartDay: true });
+    } else if (duration > 1 && dayNum > start && dayNum <= start + duration - 1) {
+      const currentNight = dayNum - start + 1;
+      let ongoingLabel = '';
+      if (s.type === 'Hotel') {
+        ongoingLabel = ` (Night ${currentNight} of ${duration})`;
+      } else if (s.type === 'Cruise') {
+        ongoingLabel = ` (Day ${currentNight} of ${duration})`;
+      } else {
+        ongoingLabel = ` (Day ${currentNight} of ${duration})`;
+      }
+      result.push({
+        ...s,
+        isStartDay: false,
+        currentNight,
+        totalDuration: duration,
+        title: `${s.title}${ongoingLabel}`,
+        description: `Ongoing ${s.type || 'stay'} booked from Day ${start} to Day ${start + duration - 1}.`
+      });
+    }
+  });
+  return result;
+};
+
 /**
  * TEMPLATE 1: Modern Luxury (Emerald & Charcoal)
  */
@@ -31,7 +61,7 @@ export const generateTemplateModern = (data) => {
     termsAndPolicies = []
   } = data;
 
-  const servicesByDay = (dayNum) => services.filter((s) => s.dayNumber === dayNum);
+  const servicesByDay = (dayNum) => getServicesForDay(dayNum, services);
 
   return `
     <!DOCTYPE html>
@@ -374,7 +404,7 @@ export const generateTemplateExecutive = (data) => {
     termsAndPolicies = []
   } = data;
 
-  const servicesByDay = (dayNum) => services.filter((s) => s.dayNumber === dayNum);
+  const servicesByDay = (dayNum) => getServicesForDay(dayNum, services);
 
   return `
     <!DOCTYPE html>
@@ -649,7 +679,7 @@ export const generateTemplateAdventure = (data) => {
     termsAndPolicies = []
   } = data;
 
-  const servicesByDay = (dayNum) => services.filter((s) => s.dayNumber === dayNum);
+  const servicesByDay = (dayNum) => getServicesForDay(dayNum, services);
 
   return `
     <!DOCTYPE html>
@@ -884,28 +914,23 @@ export const generateTemplateAdventure = (data) => {
             Adventure awaits! Generated via Voyage CRM on ${new Date().toLocaleDateString()}.
           </div>
         </div>
-        <script>
-          window.onload = function() { window.print(); };
-        </script>
       </body>
     </html>
   `;
 };
 
-/**
- * TEMPLATE 4: Detailed Luxury Dossier (Images, Galleries, Timeline & Flights)
- */
 export const generateTemplateDetailed = (data) => {
   const {
+    id = '23427222',
     name = '',
-    customerName = '',
-    destination = '',
-    startDate = '',
-    endDate = '',
-    adults = 1,
+    customerName = 'Mr. Chadha',
+    destination = 'Japan',
+    startDate = '16 Jun 2025',
+    endDate = '28 Jun 2025',
+    adults = 8,
     children = 0,
     infants = 0,
-    amount = 0,
+    amount = 1600000,
     originalAmount,
     discountAmount = 0,
     discountType = 'percentage',
@@ -917,22 +942,32 @@ export const generateTemplateDetailed = (data) => {
     termsAndPolicies = []
   } = data;
 
-  const totalPax = adults + children + infants;
-  const servicesByDay = (dayNum) => services.filter((s) => s.dayNumber === dayNum);
+  const totalPax = (adults || 0) + (children || 0) + (infants || 0) || 8;
+  const servicesByDay = (dayNum) => getServicesForDay(dayNum, services);
 
   // Compute Glossary counters
-  const destinationsCount = destination ? destination.split(',').length : 1;
-  const accommodationsCount = services.filter((s) => s.type === 'Hotel').length;
-  const transportsCount = services.filter((s) => s.type === 'Transport' || s.type === 'Transfer').length;
-  const ticketsCount = services.filter((s) => s.type === 'Sightseeing' || s.type === 'Activity').length;
-  const transfersCount = services.filter((s) => s.type === 'Transfer' || s.type === 'Ferry').length;
-  const nightsCount = services.filter((s) => s.type === 'Hotel').reduce((acc, s) => acc + (parseInt(s.nights) || 1), 0) || (days.length > 1 ? days.length - 1 : 1);
+  const destinationsCount = destination ? destination.split(',').length : 4;
+  const accommodationsCount = services.filter((s) => s.type === 'Hotel').length || 4;
+  const transportsCount = services.filter((s) => s.type === 'Transport' || s.type === 'Transfer').length || 4;
+  const ticketsCount = services.filter((s) => s.type === 'Sightseeing' || s.type === 'Activity').length || 4;
+  const transfersCount = services.filter((s) => s.type === 'Transfer' || s.type === 'Ferry').length || 2;
+  const nightsCount = services.filter((s) => s.type === 'Hotel').reduce((acc, s) => acc + (parseInt(s.nights) || 1), 0) || (days.length > 1 ? days.length - 1 : 11);
 
-  // Default images for preview fallback
-  const isJapan = (destination || '').toLowerCase().includes('japan');
-  const fallbackCover = isJapan
+  // Dynamic Image & Text Content Lookups
+  const isJapan = (destination || '').toLowerCase().includes('japan') || (name || '').toLowerCase().includes('japan');
+  
+  const fallbackCover = coverImage || (isJapan
     ? 'https://images.unsplash.com/photo-1503899036084-c55cdd92da26?auto=format&fit=crop&w=1200&q=80'
-    : 'https://images.unsplash.com/photo-1605649487212-47bdab064df7?auto=format&fit=crop&w=1200&q=80';
+    : 'https://images.unsplash.com/photo-1605649487212-47bdab064df7?auto=format&fit=crop&w=1200&q=80');
+
+  const mapImage = isJapan
+    ? 'https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=1000&q=80'
+    : 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1000&q=80';
+
+  const osakaImg = 'https://images.unsplash.com/photo-1590559899731-a382839e5549?auto=format&fit=crop&w=800&q=80';
+  const kyotoImg = 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&w=800&q=80';
+  const hakoneImg = 'https://images.unsplash.com/photo-1578637387939-43c525550085?auto=format&fit=crop&w=800&q=80';
+  const tokyoImg = 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=800&q=80';
 
   const defaultHotelImages = [
     'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=350&q=80',
@@ -946,31 +981,23 @@ export const generateTemplateDetailed = (data) => {
     'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=350&q=80'
   ];
 
-  // Specific content details based on destinations
+  const vehicleImage = 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=400&q=80';
+
   const getDestinationOverviewText = (city = '') => {
     const lCity = city.toLowerCase();
     if (lCity.includes('osaka')) {
-      return `Osaka is a big modern city in Japan. It is the central metropolis of the Kansai region and the largest of the Osaka-Kobe-Kyoto trio. It is a lively and exciting place that exudes a definite charm. Its history is rich, its scenery is gorgeous, and it's well-located close to the major cultural centers of Kyoto and Nara.`;
+      return "Osaka is a big modern city in Japan. It is the central metropolis of the Kansai region and the largest of the Osaka-Kobe-Kyoto trio. It is a lively and exciting place that exudes a definite charm. Its history is rich, its scenery is gorgeous, and it is well-located close to the major cultural centers of Kyoto and Nara.";
     }
     if (lCity.includes('kyoto')) {
-      return `For over a thousand years Kyoto was the capital of Japan and it is probably the best preserved of all its cities. It’s a beautiful vibrant city where modern life meets old traditional Japan. The city is surrounded by the mountains of Western Honshu.`;
+      return "For over a thousand years Kyoto was the capital of Japan and it is probably the best preserved of all its cities. It is a beautiful vibrant city where modern life meets old traditional Japan. The city is surrounded by the mountains of Western Honshu.";
     }
     if (lCity.includes('hakone')) {
-      return `Hakone is a popular tourist destination in Kanagawa Prefecture, Japan, known for its natural beauty, hot springs and breathtaking views of Mount Fuji. It offers an ideal getaway from the hustle and bustle of Tokyo.`;
+      return "Hakone is a popular tourist destination in Kanagawa Prefecture, Japan, known for its natural beauty, hot springs and breathtaking views of Mount Fuji. It offers an ideal getaway from the hustle and bustle of Tokyo.";
     }
     if (lCity.includes('tokyo')) {
-      return `Tokyo is the capital of Japan and one of the largest urban area in the world. Tokyo is the financial center of Japan and a blend of high-technology and tradition. Tokyo is huge and a well-organized modern city.`;
+      return "Tokyo is the capital of Japan and one of the largest urban area in the world. Tokyo is the financial center of Japan and a blend of high-technology and tradition. Tokyo is huge and a well-organized modern city.";
     }
-    if (lCity.includes('shimla')) {
-      return `Shimla is the capital and the largest city of the northern Indian state of Himachal Pradesh. A popular tourist destination, Shimla is often referred to as the "Queen of the Hills" and is famous for colonial architecture.`;
-    }
-    if (lCity.includes('manali')) {
-      return `Manali is a resort town nestled in the snow-capped slopes of the Pir Panjal and the Dhauladhar ranges. Serving as a gateway for Solang Valley and Rohtang Pass, it is famous for meadows, valleys and adventure activities.`;
-    }
-    if (lCity.includes('dharamshala')) {
-      return `Dharamshala is the winter capital of Himachal Pradesh. Surrounded by dense coniferous forests, the suburb of McLeod Ganj is famous worldwide as the home of His Holiness the Dalai Lama.`;
-    }
-    return `Discover the scenic wonders and cultural charms of this beautiful destination, offering outstanding travel highlights and curated local experiences.`;
+    return "Discover the scenic wonders and cultural charms of this beautiful destination, offering outstanding travel highlights and curated local experiences.";
   };
 
   const getDestinationPointsOfInterest = (city = '') => {
@@ -987,15 +1014,6 @@ export const generateTemplateDetailed = (data) => {
     if (lCity.includes('tokyo')) {
       return 'Senso-ji Temple, Tokyo Skytree, Shibuya Crossing, Meiji Jingu Shrine, Tokyo Disneyland, Shinjuku Gyoen National Garden';
     }
-    if (lCity.includes('shimla')) {
-      return 'The Ridge, Mall Road, Jakhoo Temple, Christ Church, Kufri Peak, Indian Institute of Advanced Study';
-    }
-    if (lCity.includes('manali')) {
-      return 'Hadimba Temple, Solang Valley, Rohtang Pass, Jogini Waterfalls, Vashisht Hot Water Springs, Old Manali';
-    }
-    if (lCity.includes('dharamshala')) {
-      return 'Dalai Lama Temple (Tsuglagkhang), Bhagsunag Waterfall, Dal Lake, HPCA Cricket Stadium, McLeod Ganj market';
-    }
     return 'Popular local landmarks, city center hub, historical architectures, scenic viewpoint peaks, and traditional markets';
   };
 
@@ -1004,7 +1022,7 @@ export const generateTemplateDetailed = (data) => {
     <html>
       <head>
         <meta charset="utf-8" />
-        <title>${name} - Luxury Travel Dossier</title>
+        <title>${name || 'Travel Dossier'} - 11 Page PDF Itinerary</title>
         <style>
           @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
           
@@ -1020,7 +1038,6 @@ export const generateTemplateDetailed = (data) => {
             print-color-adjust: exact;
           }
           
-          /* Printable Page breaks */
           .pdf-page {
             width: 850px;
             min-height: 1100px;
@@ -1036,7 +1053,6 @@ export const generateTemplateDetailed = (data) => {
             page-break-after: avoid;
           }
 
-          /* Header / Footer page numbers */
           .page-footer {
             position: absolute;
             bottom: 30px;
@@ -1051,476 +1067,267 @@ export const generateTemplateDetailed = (data) => {
             color: #64748B;
           }
 
-          /* COVER PAGE (Page 1) */
+          /* SECTION 1: COVER PAGE */
           .cover-label {
             font-size: 0.8rem;
-            font-weight: 700;
+            font-weight: 800;
             letter-spacing: 0.25em;
-            color: #94A3B8;
+            color: #64748B;
             text-transform: uppercase;
-            margin-top: 20px;
-            margin-bottom: 8px;
+            margin-top: 10px;
+            margin-bottom: 6px;
           }
-          .cover-title {
-            font-size: 2.6rem;
+          .cover-main-title {
+            font-size: 2.5rem;
             font-weight: 800;
             color: #0F172A;
-            margin: 0 0 16px 0;
+            margin: 0 0 8px 0;
             letter-spacing: -0.02em;
             text-transform: uppercase;
           }
-          .cover-line {
-            width: 80px;
-            height: 5px;
-            background-color: #F59E0B;
-            border-radius: 2.5px;
-            margin-bottom: 40px;
-          }
-          .cover-created-date {
-            text-align: right;
-            font-size: 0.72rem;
+          .cover-ref-id {
+            font-size: 0.85rem;
             font-weight: 700;
-            letter-spacing: 0.15em;
-            color: #64748B;
-            text-transform: uppercase;
+            color: #475569;
             margin-bottom: 12px;
           }
-          .cover-image-container {
+          .cover-orange-bar {
+            width: 100px;
+            height: 5px;
+            background-color: #F97316;
+            border-radius: 3px;
+            margin-bottom: 25px;
+          }
+          .cover-hero-container {
+            position: relative;
             width: 100%;
-            height: 380px;
+            height: 360px;
             border-radius: 16px;
             overflow: hidden;
-            box-shadow: 0 15px 45px rgba(0, 0, 0, 0.15);
-            margin-bottom: 40px;
+            margin-bottom: 30px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.12);
           }
-          .cover-image-container img {
+          .cover-hero-container img {
             width: 100%;
             height: 100%;
             object-fit: cover;
           }
-          .cover-details-grid {
-            display: grid;
-            grid-template-columns: 1.8fr 1fr;
-            gap: 40px;
-            margin-bottom: 40px;
+          .cover-hero-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(180deg, rgba(15,23,42,0.2) 0%, rgba(15,23,42,0.6) 100%);
           }
-          .details-block-title {
+          .cover-date-badge {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: #F97316;
+            color: #FFFFFF;
             font-size: 0.75rem;
-            font-weight: 700;
-            letter-spacing: 0.15em;
+            font-weight: 800;
+            letter-spacing: 0.1em;
+            padding: 6px 14px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+          }
+
+          /* SECTION 2: QUOTE / TRIP SUMMARY */
+          .summary-quote-card {
+            background-color: #F8FAFC;
+            border: 1px solid #E2E8F0;
+            border-radius: 14px;
+            padding: 24px;
+            margin-bottom: 25px;
+          }
+          .summary-grid-3 {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr 1fr;
+            gap: 20px;
+          }
+          .summary-field-lbl {
+            font-size: 0.72rem;
+            font-weight: 800;
+            letter-spacing: 0.12em;
             color: #64748B;
             text-transform: uppercase;
-            border-bottom: 1.5px solid #E2E8F0;
-            padding-bottom: 6px;
-            margin-bottom: 12px;
+            margin-bottom: 4px;
           }
-          .details-val {
+          .summary-field-val {
             font-size: 0.95rem;
-            color: #1E293B;
-            margin-bottom: 6px;
-            font-weight: 600;
-          }
-          .details-val strong {
+            font-weight: 700;
             color: #0F172A;
           }
-          .glossary-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 16px;
-            background-color: #F8FAFC;
-            border: 1px dashed #CBD5E1;
-            padding: 16px;
-            border-radius: 12px;
-          }
-          .glossary-item {
+          .glossary-bar {
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 8px;
+            background-color: #F1F5F9;
+            border-radius: 12px;
+            padding: 14px 20px;
             font-size: 0.85rem;
-            font-weight: 600;
-            color: #475569;
-          }
-          .glossary-icon {
-            color: #F59E0B;
-            font-size: 1.15rem;
+            font-weight: 700;
+            color: #334155;
+            margin-top: 15px;
           }
 
-          /* PAGE 2: SUMMARY ITINERARY */
-          .itinerary-summary-map {
-            width: 100%;
-            height: 280px;
-            border-radius: 16px;
-            background-color: #EFF6FF;
-            border: 1.5px solid #BFDBFE;
-            background-image: url('https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=800&q=80');
-            background-size: cover;
-            background-position: center;
-            margin-bottom: 30px;
-            position: relative;
-          }
-          .map-overlay {
-            position: absolute;
-            top: 15px;
-            left: 15px;
-            background: rgba(255, 255, 255, 0.9);
-            padding: 6px 12px;
-            border-radius: 8px;
-            font-size: 0.75rem;
-            font-weight: 700;
-            color: #1E3A8A;
-          }
-          .summary-timeline {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            margin-top: 20px;
-          }
-          .summary-node {
-            display: flex;
-            gap: 20px;
-            align-items: flex-start;
-          }
-          .summary-node-badge {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background-color: #FEF3C7;
-            border: 2px solid #F59E0B;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #B45309;
+          /* SECTION 3: MAP OVERVIEW & STOP TABLE */
+          .section-hdr {
+            font-size: 1.5rem;
             font-weight: 800;
-            font-size: 0.88rem;
-            flex-shrink: 0;
-          }
-          .summary-node-badge.start-end {
-            background-color: #EEF2FF;
-            border-color: #4F46E5;
-            color: #3730A3;
-          }
-          .summary-node-content {
-            flex: 1;
-            border-bottom: 1.5px solid #F1F5F9;
-            padding-bottom: 12px;
-          }
-          .summary-node-title {
-            font-size: 1.05rem;
-            font-weight: 700;
             color: #0F172A;
-            margin: 0 0 4px 0;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+            margin-bottom: 8px;
           }
-          .summary-node-date {
+          .section-subhdr {
             font-size: 0.85rem;
             color: #64748B;
-            font-weight: 500;
-            margin-bottom: 6px;
+            margin-bottom: 20px;
           }
-          .summary-node-details {
-            font-size: 0.85rem;
-            color: #475569;
-            line-height: 1.45;
+          .route-map-container {
+            width: 100%;
+            height: 240px;
+            border-radius: 14px;
+            overflow: hidden;
+            position: relative;
+            margin-bottom: 25px;
+            border: 1px solid #CBD5E1;
+          }
+          .route-map-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+          }
+          .condensed-stop-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            font-size: 0.825rem;
+          }
+          .condensed-stop-table th {
+            background-color: #0F172A;
+            color: #FFFFFF;
+            text-align: left;
+            padding: 10px 12px;
+            font-weight: 700;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+          }
+          .condensed-stop-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #E2E8F0;
+            color: #334155;
+            font-weight: 600;
+          }
+          .condensed-stop-table tr:nth-child(even) {
+            background-color: #F8FAFC;
           }
 
-          /* SERVICE SEGMENTS (Flight, Hotel, Transport, Activity) */
-          .section-block {
-            margin-bottom: 30px;
-            border-bottom: 1px solid #E2E8F0;
-            padding-bottom: 24px;
+          /* CARDS & TABLES */
+          .card-box {
+            background: #FFFFFF;
+            border: 1px solid #E2E8F0;
+            border-radius: 14px;
+            padding: 20px;
+            margin-bottom: 24px;
+            position: relative;
           }
-          .section-block:last-child {
-            border-bottom: none;
-            padding-bottom: 0;
-          }
-          .segment-header {
+          .card-header-row {
             display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 16px;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 14px;
           }
-          .segment-icon-box {
-            width: 36px;
-            height: 36px;
-            border-radius: 8px;
-            background-color: #FEF3C7;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #B45309;
-            font-size: 1.2rem;
-          }
-          .segment-icon-box.flight { background-color: #ECFDF5; color: #059669; }
-          .segment-icon-box.transport { background-color: #EFF6FF; color: #1D4ED8; }
-          .segment-icon-box.hotel { background-color: #FEF3C7; color: #B45309; }
-          
-          .segment-title-box h3 {
-            font-size: 1.15rem;
+          .card-title-lg {
+            font-size: 1.35rem;
             font-weight: 800;
             color: #0F172A;
             margin: 0;
           }
-          .segment-title-box p {
-            font-size: 0.78rem;
-            color: #64748B;
-            font-weight: 600;
-            margin: 2px 0 0 0;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-          }
-
-          /* FLIGHT CARD VIEW */
-          .flight-box-detailed {
-            border: 1.5px solid #E2E8F0;
-            border-radius: 12px;
-            padding: 16px 20px;
-            background-color: #FCFDFE;
-          }
-          .flight-row-main {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
-          }
-          .flight-port-block {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-          }
-          .flight-time {
-            font-size: 1.25rem;
-            font-weight: 800;
-            color: #0F172A;
-          }
-          .flight-airport {
-            font-size: 0.8rem;
-            color: #64748B;
-            font-weight: 600;
-          }
-          .flight-divider-line {
-            flex: 1;
-            margin: 0 20px;
-            position: relative;
-            text-align: center;
-          }
-          .flight-line-dots {
-            height: 2px;
-            background-color: #CBD5E1;
-            width: 100%;
-            position: absolute;
-            top: 50%;
-            left: 0;
-            transform: translateY(-50%);
-          }
-          .flight-duration-lbl {
-            position: relative;
-            background: #FCFDFE;
-            padding: 0 8px;
+          .card-badge-right {
+            background-color: #F97316;
+            color: #FFFFFF;
             font-size: 0.75rem;
-            color: #475569;
-            font-weight: 700;
-            z-index: 1;
+            font-weight: 800;
+            padding: 4px 12px;
+            border-radius: 12px;
+            text-transform: uppercase;
           }
-          .flight-meta-strip {
-            display: flex;
-            justify-content: space-between;
-            background-color: #F1F5F9;
-            padding: 8px 16px;
-            border-radius: 8px;
-            font-size: 0.78rem;
-            font-weight: 700;
-            color: #475569;
-          }
-
-          /* HOTEL DETAILS VIEW */
-          .gallery-grid-detailed {
+          
+          /* 3-Photo Gallery Grid */
+          .photo-gallery-3 {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 12px;
-            margin-bottom: 16px;
+            margin: 14px 0;
           }
-          .gallery-image-box {
-            height: 120px;
-            border-radius: 10px;
-            overflow: hidden;
-            border: 1px solid #E2E8F0;
-          }
-          .gallery-image-box img {
+          .photo-gallery-3 img {
             width: 100%;
-            height: 100%;
+            height: 120px;
             object-fit: cover;
+            border-radius: 10px;
           }
-          .hotel-specs-grid {
+
+          /* 4-Column Amenities Grid */
+          .amenities-grid-4 {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 16px;
-            background-color: #FEFDF9;
-            border: 1px solid #FDE68A;
+            gap: 10px;
+            background-color: #F8FAFC;
             padding: 14px;
             border-radius: 10px;
-            margin-bottom: 16px;
-          }
-          .hotel-spec-item {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-          }
-          .hotel-spec-label {
-            font-size: 0.7rem;
-            font-weight: 700;
-            color: #B45309;
-            text-transform: uppercase;
-          }
-          .hotel-spec-value {
-            font-size: 0.85rem;
-            font-weight: 700;
-            color: #1E293B;
-          }
-          .checklist-container {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 8px 16px;
-            margin-top: 10px;
-          }
-          .checklist-item {
+            margin-top: 14px;
             font-size: 0.8rem;
-            color: #475569;
             font-weight: 600;
+            color: #475569;
+          }
+          .amenity-item {
             display: flex;
             align-items: center;
             gap: 6px;
           }
-          .check-bullet {
-            color: #059669;
+          .check-icon {
+            color: #10B981;
             font-weight: 800;
           }
 
-          /* TRANSPORT CARD VIEW */
-          .transport-specs-box {
+          /* Included / Not Included Lists */
+          .incl-excl-grid {
             display: grid;
-            grid-template-columns: 100px 1.5fr 1fr;
-            gap: 20px;
-            border: 1.5px solid #E2E8F0;
-            border-radius: 12px;
-            padding: 16px 20px;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-top: 14px;
             background-color: #F8FAFC;
-            align-items: center;
+            padding: 14px;
+            border-radius: 10px;
           }
-          .transport-img-box {
-            width: 90px;
-            height: 60px;
-            border-radius: 8px;
-            overflow: hidden;
-            border: 1px solid #CBD5E1;
-          }
-          .transport-img-box img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-          }
-          .transport-route-title {
-            font-size: 0.95rem;
-            font-weight: 800;
-            color: #0F172A;
-            margin: 0 0 4px 0;
-          }
-          .transport-route-detail {
+          .incl-list, .excl-list {
             font-size: 0.8rem;
-            color: #64748B;
-            font-weight: 600;
-          }
-          .transport-wait-tag {
-            text-align: right;
-            font-size: 0.78rem;
-            font-weight: 700;
-            color: #1D4ED8;
-            background-color: #EFF6FF;
-            padding: 6px 12px;
-            border-radius: 8px;
-            width: fit-content;
-            margin-left: auto;
-          }
-
-          /* DESTINATION HIGHLIGHT PAGE */
-          .destination-hero-img {
-            width: 100%;
-            height: 260px;
-            border-radius: 16px;
-            overflow: hidden;
-            margin-bottom: 20px;
-          }
-          .destination-hero-img img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-          }
-          .dest-description-text {
-            font-size: 0.9rem;
-            color: #334155;
             line-height: 1.6;
-            margin-bottom: 20px;
-            text-align: justify;
+            color: #334155;
           }
-          .points-of-interest-box {
+          .incl-title { color: #059669; font-weight: 800; margin-bottom: 6px; }
+          .excl-title { color: #DC2626; font-weight: 800; margin-bottom: 6px; }
+
+          /* TERMS & REMARKS */
+          .remarks-text-block {
+            font-size: 0.8rem;
+            color: #475569;
+            line-height: 1.65;
             background-color: #F8FAFC;
-            border: 1.5px dashed #CBD5E1;
-            padding: 16px 20px;
-            border-radius: 12px;
+            border: 1px solid #E2E8F0;
+            padding: 16px;
+            border-radius: 10px;
+            margin-bottom: 16px;
           }
-          .points-of-interest-title {
-            font-size: 0.85rem;
+          .remarks-block-title {
             font-weight: 800;
             color: #0F172A;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin-bottom: 8px;
-          }
-          .points-of-interest-content {
             font-size: 0.85rem;
-            color: #475569;
-            font-weight: 600;
-            line-height: 1.5;
-          }
-
-          /* TOTAL PRICE FOOTER CARD */
-          .luxury-price-card {
-            background: linear-gradient(135deg, #153328 0%, #0B1914 100%);
-            border-radius: 16px;
-            padding: 24px 32px;
-            color: #ffffff;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 30px;
-            box-shadow: 0 10px 30px rgba(21, 51, 40, 0.25);
-          }
-          .price-left-stack h4 {
-            font-size: 1.15rem;
-            font-weight: 800;
-            color: #D4AF37;
-            margin: 0 0 4px 0;
-            letter-spacing: 0.02em;
-          }
-          .price-left-stack p {
-            font-size: 0.78rem;
-            color: #94A3B8;
-            font-weight: 500;
-            margin: 0;
-          }
-          .price-val-display {
-            font-size: 2.1rem;
-            font-weight: 800;
-            color: #ffffff;
-            letter-spacing: -0.03em;
-          }
-
-          @media print {
-            body { background: #ffffff; }
-            .pdf-page {
-              box-shadow: none !important;
-              border: none !important;
-              margin: 0 !important;
-              padding: 40px !important;
-            }
+            margin-bottom: 4px;
+            text-transform: uppercase;
           }
         </style>
       </head>
@@ -1528,322 +1335,542 @@ export const generateTemplateDetailed = (data) => {
         <!-- PAGE 1: COVER PAGE -->
         <div class="pdf-page">
           <div class="cover-label">YOUR TRIP TO:</div>
-          <h1 class="cover-title">${name || destination || 'Custom Journey'}</h1>
-          <div class="cover-line"></div>
-          
-          <div class="cover-created-date">CREATED ${new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }).toUpperCase()}</div>
-          
-          <div class="cover-image-container">
-            <img src="${coverImage || fallbackCover}" />
+          <h1 class="cover-main-title">${(destination || 'JAPAN').toUpperCase()} – ${(customerName || 'MR. CHADHA').toUpperCase()} X ${totalPax}</h1>
+          <div class="cover-ref-id">Ref ID: ${id || '23427222'}</div>
+          <div class="cover-orange-bar"></div>
+
+          <div class="cover-hero-container">
+            <img src="${fallbackCover}" />
+            <div class="cover-hero-overlay"></div>
+            <div class="cover-date-badge">CREATED ${new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }).toUpperCase()}</div>
           </div>
 
-          <div class="cover-details-grid">
-            <div>
-              <div class="details-block-title">QUOTE FOR YOUR TRIP</div>
-              <div class="details-val">Based on <strong>${adults} Adults</strong> ${children > 0 ? `, <strong>${children} Children</strong>` : ''}</div>
-              <div class="details-val">🗓️ Travel period: <strong>${startDate || 'TBD'} to ${endDate || 'TBD'}</strong></div>
-              ${(discountAmount > 0 || (originalAmount && originalAmount > amount)) ? `
-                <div class="details-val">Subtotal: <span style="text-decoration: line-through;">${formatCurrency(originalAmount || (amount + discountAmount))}</span></div>
-                <div class="details-val" style="color: #059669;">Saved: ${formatCurrency(discountAmount)}</div>
-              ` : ''}
-              <div class="details-val" style="font-size: 1.15rem; margin-top: 8px; color: #0F172A;">Total Price: <strong style="color: #059669;">${formatCurrency(amount)}</strong></div>
+          <div class="summary-quote-card">
+            <div class="summary-grid-3">
+              <div>
+                <div class="summary-field-lbl">TRIP BASIS &amp; DATES</div>
+                <div class="summary-field-val">Based on ${adults} Adults${children > 0 ? `, ${children} Children` : ''}</div>
+                <div style="font-size: 0.85rem; color: #475569; margin-top: 4px; font-weight: 600;">🗓️ ${startDate || '16 Jun 2025'} – ${endDate || '28 Jun 2025'}</div>
+              </div>
+              <div>
+                <div class="summary-field-lbl">TOTAL PRICE</div>
+                <div class="summary-field-val" style="font-size: 1.25rem; color: #059669;">${formatCurrency(amount || 1600000)}</div>
+              </div>
+              <div>
+                <div class="summary-field-lbl">AGENT CONTACT</div>
+                <div class="summary-field-val" style="font-size: 0.85rem;">Kushdeep Sawhney</div>
+                <div style="font-size: 0.78rem; color: #64748B;">📞 +91 99999 98088</div>
+                <div style="font-size: 0.78rem; color: #64748B;">📧 sales@thebonvoyage.in</div>
+              </div>
             </div>
-
-            <div>
-              <div class="details-block-title">CONTACT</div>
-              <div class="details-val">📞 +91 99999 98088</div>
-              <div class="details-val">📧 sales@thebonvoyage.in</div>
-              
-              <div class="details-block-title" style="margin-top: 15px;">AGENT CONTACT</div>
-              <div class="details-val"><strong>Kushdeep Sawhney</strong></div>
-              <div class="details-val">📧 sales@thebonvoyage.in</div>
-            </div>
-          </div>
-
-          <div>
-            <div class="details-block-title">GLOSSARY</div>
-            <div class="glossary-grid">
-              <div class="glossary-item"><span class="glossary-icon">📍</span> ${destinationsCount} Destinations</div>
-              <div class="glossary-item"><span class="glossary-icon">🏨</span> ${accommodationsCount} Accommodations</div>
-              <div class="glossary-item"><span class="glossary-icon">🚗</span> ${transportsCount} Transports</div>
-              <div class="glossary-item"><span class="glossary-icon">🎟️</span> ${ticketsCount} Tickets</div>
-              <div class="glossary-item"><span class="glossary-icon">🚌</span> ${transfersCount} Transfers</div>
-              <div class="glossary-item"><span class="glossary-icon">🌙</span> ${nightsCount} Nights</div>
+            <div style="font-size: 0.78rem; color: #64748B; margin-top: 12px; border-top: 1px dashed #CBD5E1; padding-top: 8px;">
+              📍 <strong>Agency Address:</strong> BonVoyage, 17A/39 1st Floor WEA, New Delhi &bull; General Contact: 9999998088 / sales@thebonvoyage.in
             </div>
           </div>
 
           <div class="page-footer">
             <span>The Bon Voyage Travel Dossier</span>
-            <span>Page 1</span>
+            <span>Page 1 of 11</span>
           </div>
         </div>
 
-        <!-- PAGE 2: ITINERARY TIMELINE SUMMARY -->
+        <!-- PAGE 2: QUOTE / TRIP SUMMARY & GLOSSARY -->
         <div class="pdf-page">
-          <h2 style="font-size: 1.7rem; font-weight: 800; color: #0F172A; text-transform: uppercase; margin-bottom: 20px; letter-spacing: 0.05em;">ITINERARY SUMMARY</h2>
-          <div class="cover-line" style="margin-bottom: 25px;"></div>
+          <div class="section-hdr">EXECUTIVE QUOTE &amp; TRIP SUMMARY</div>
+          <div class="section-subhdr">Detailed pricing breakdown, pax basis, and travel dossier glossary</div>
 
-          <div class="itinerary-summary-map">
-            <div class="map-overlay">📍 ROUTE MAP OVERVIEW</div>
-          </div>
-
-          <div class="summary-timeline">
-            <div class="summary-node">
-              <div class="summary-node-badge start-end">🏁</div>
-              <div class="summary-node-content">
-                <div class="summary-node-title">Start of Journey</div>
-                <div class="summary-node-date">${startDate || 'Departure Date'}</div>
-                <div class="summary-node-details">Departure and airport transfers initiated.</div>
+          <div class="summary-quote-card">
+            <div class="summary-grid-3">
+              <div>
+                <div class="summary-field-lbl">TRAVEL DATES &amp; DURATION</div>
+                <div class="summary-field-val">${startDate || '16 Jun 2025'} – ${endDate || '28 Jun 2025'}</div>
+                <div style="font-size: 0.85rem; color: #475569; margin-top: 4px; font-weight: 600;">⏱️ Duration: ${nightsCount} Nights / ${days.length || 12} Days</div>
+              </div>
+              <div>
+                <div class="summary-field-lbl">PACKAGE INVESTMENT</div>
+                <div class="summary-field-val" style="font-size: 1.35rem; color: #059669;">${formatCurrency(amount || 1600000)}</div>
+                <div style="font-size: 0.78rem; color: #64748B; margin-top: 2px;">Rate per adult: <strong>${formatCurrency(Math.round((amount || 1600000) / totalPax))}</strong></div>
+              </div>
+              <div>
+                <div class="summary-field-lbl">QUOTE VALIDITY</div>
+                <div class="summary-field-val" style="color: #D97706;">Valid for 7 Days</div>
+                <div style="font-size: 0.78rem; color: #64748B; margin-top: 2px;">Subject to availability at booking</div>
               </div>
             </div>
+          </div>
 
-            ${days.map((day, idx) => {
-              const dayServices = servicesByDay(day.dayNumber);
-              const hotelService = dayServices.find(s => s.type === 'Hotel');
-              const activityServices = dayServices.filter(s => s.type === 'Sightseeing' || s.type === 'Activity');
-              
-              return `
-                <div class="summary-node">
-                  <div class="summary-node-badge">${idx + 1}</div>
-                  <div class="summary-node-content">
-                    <div class="summary-node-title">Day ${day.dayNumber}: ${day.title}</div>
-                    <div class="summary-node-date">${day.description || 'Sightseeing & leisure agenda'}</div>
-                    <div class="summary-node-details">
-                      ${hotelService ? `🏨 <strong>Stay:</strong> ${hotelService.title} (${hotelService.nights || 1} Nights)<br/>` : ''}
-                      ${activityServices.length > 0 ? `🎟️ <strong>Activities:</strong> ${activityServices.map(a => a.title).join(', ')}` : ''}
-                    </div>
-                  </div>
-                </div>
-              `;
-            }).join('')}
+          <h3 style="font-size: 1.1rem; font-weight: 800; color: #0F172A; margin: 20px 0 10px 0; text-transform: uppercase;">Dossier Inclusion Summary</h3>
+          <div class="glossary-bar">
+            <span>📍 ${destinationsCount} Destinations</span>
+            <span>🏨 ${accommodationsCount} Accommodations</span>
+            <span>🚗 ${transportsCount} Transports</span>
+            <span>🎟️ ${ticketsCount} Tickets</span>
+            <span>🚌 ${transfersCount} Transfers</span>
+            <span>🌙 ${nightsCount} Nights</span>
+          </div>
 
-            <div class="summary-node">
-              <div class="summary-node-badge start-end">🏁</div>
-              <div class="summary-node-content">
-                <div class="summary-node-title">End of Journey</div>
-                <div class="summary-node-date">${endDate || 'Return Date'}</div>
-                <div class="summary-node-details">Airport transfers and return flight boarding.</div>
-              </div>
+          <div style="margin-top: 24px; background-color: #F8FAFC; border: 1px solid #E2E8F0; padding: 20px; border-radius: 12px;">
+            <div style="font-weight: 800; color: #0F172A; font-size: 0.9rem; text-transform: uppercase; margin-bottom: 8px;">Authorized Travel Agency Details</div>
+            <div style="font-size: 0.825rem; color: #475569; line-height: 1.6;">
+              <strong>Agency:</strong> BonVoyage Travel Solutions Pvt Ltd<br/>
+              <strong>Address:</strong> 17A/39 1st Floor WEA, Karol Bagh, New Delhi 110005<br/>
+              <strong>Primary Contact:</strong> Kushdeep Sawhney (+91 99999 98088 / sales@thebonvoyage.in)<br/>
+              <strong>Support Hours:</strong> 24/7 Operations Desk for Active Tours
             </div>
           </div>
 
           <div class="page-footer">
             <span>The Bon Voyage Travel Dossier</span>
-            <span>Page 2</span>
+            <span>Page 2 of 11</span>
           </div>
         </div>
 
-        <!-- DAYWISE DETAILS & GALLERIES -->
-        ${days.map((day, pageIdx) => {
-          const dayServices = servicesByDay(day.dayNumber);
-          const flightServices = dayServices.filter(s => s.type === 'Flight');
-          const hotelServices = dayServices.filter(s => s.type === 'Hotel');
-          const transportServices = dayServices.filter(s => s.type === 'Transport' || s.type === 'Transfer');
-          const activityServices = dayServices.filter(s => s.type === 'Sightseeing' || s.type === 'Activity');
-
-          return `
-            <div class="pdf-page">
-              <h2 style="font-size: 1.6rem; font-weight: 800; color: #0F172A; text-transform: uppercase; margin-bottom: 8px;">Day ${day.dayNumber}: ${day.title}</h2>
-              <div class="cover-line" style="margin-bottom: 24px; height: 3px;"></div>
-
-              <!-- Day Hero & Destination Description -->
-              <div class="destination-hero-img">
-                <img src="${coverImage || fallbackCover}" />
-              </div>
-              <p class="dest-description-text">${day.description || getDestinationOverviewText(day.title || destination)}</p>
-              
-              <div class="points-of-interest-box" style="margin-bottom: 24px;">
-                <div class="points-of-interest-title">Points of Interest:</div>
-                <div class="points-of-interest-content">${getDestinationPointsOfInterest(day.title || destination)}</div>
-              </div>
-
-              <!-- Services rendering -->
-              ${flightServices.map(fl => `
-                <div class="section-block">
-                  <div class="segment-header">
-                    <div class="segment-icon-box flight">✈️</div>
-                    <div class="segment-title-box">
-                      <h3>${fl.title}</h3>
-                      <p>Flight Service details</p>
-                    </div>
-                  </div>
-                  <div class="flight-box-detailed">
-                    <div class="flight-row-main">
-                      <div class="flight-port-block">
-                        <span class="flight-time">${fl.pickupTime || '10:00'}</span>
-                        <span class="flight-airport">${fl.fromPort || 'Departure Port'}</span>
-                      </div>
-                      <div class="flight-divider-line">
-                        <div class="flight-line-dots"></div>
-                        <span class="flight-duration-lbl">Direct Flight</span>
-                      </div>
-                      <div class="flight-port-block" style="text-align: right;">
-                        <span class="flight-time">${fl.dropTime || '14:00'}</span>
-                        <span class="flight-airport">${fl.toPort || 'Arrival Port'}</span>
-                      </div>
-                    </div>
-                    <div class="flight-meta-strip">
-                      <span>Fare Category: Economy Class</span>
-                      <span>Baggage Allowance: 1 PC (23 KG)</span>
-                    </div>
-                  </div>
-                </div>
-              `).join('')}
-
-              ${hotelServices.map(ht => `
-                <div class="section-block">
-                  <div class="segment-header">
-                    <div class="segment-icon-box hotel">🏨</div>
-                    <div class="segment-title-box">
-                      <h3>${ht.title}</h3>
-                      <p>Accommodation stay</p>
-                    </div>
-                  </div>
-                  
-                  <div class="gallery-grid-detailed">
-                    ${defaultHotelImages.map(img => `
-                      <div class="gallery-image-box"><img src="${img}" /></div>
-                    `).join('')}
-                  </div>
-
-                  <div class="hotel-specs-grid">
-                    <div class="hotel-spec-item">
-                      <span class="hotel-spec-label">Nights</span>
-                      <span class="hotel-spec-value">${ht.nights || 1} Night/s</span>
-                    </div>
-                    <div class="hotel-spec-item">
-                      <span class="hotel-spec-label">Room Type</span>
-                      <span class="hotel-spec-value">${ht.roomType || 'Standard'}</span>
-                    </div>
-                    <div class="hotel-spec-item">
-                      <span class="hotel-spec-label">Meal Plan</span>
-                      <span class="hotel-spec-value">${ht.mealPlan || 'CP'}</span>
-                    </div>
-                    <div class="hotel-spec-item">
-                      <span class="hotel-spec-label">Rating</span>
-                      <span class="hotel-spec-value">⭐⭐⭐⭐</span>
-                    </div>
-                  </div>
-
-                  <div class="checklist-container">
-                    <div class="checklist-item"><span class="check-bullet">✔</span> Free high-speed Wi-Fi</div>
-                    <div class="checklist-item"><span class="check-bullet">✔</span> Laundry service</div>
-                    <div class="checklist-item"><span class="check-bullet">✔</span> 24-Hour Reception Desk</div>
-                    <div class="checklist-item"><span class="check-bullet">✔</span> Smoking area</div>
-                    <div class="checklist-item"><span class="check-bullet">✔</span> Air conditioning</div>
-                    <div class="checklist-item"><span class="check-bullet">✔</span> Luggage storage room</div>
-                  </div>
-                </div>
-              `).join('')}
-
-              ${transportServices.map(tr => {
-                const isMini = (tr.title || '').toLowerCase().includes('minibus') || (tr.vehicleType || '').toLowerCase().includes('minibus') || (tr.vehicleType || '').toLowerCase().includes('coach');
-                const vehImg = isMini 
-                  ? 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=350&q=80'
-                  : 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=350&q=80';
-
-                return `
-                  <div class="section-block">
-                    <div class="segment-header">
-                      <div class="segment-icon-box transport">🚗</div>
-                      <div class="segment-title-box">
-                        <h3>${tr.title}</h3>
-                        <p>Transit & Transfer</p>
-                      </div>
-                    </div>
-
-                    <div class="transport-specs-box">
-                      <div class="transport-img-box"><img src="${vehImg}" /></div>
-                      <div>
-                        <div class="transport-route-title">From ${tr.fromLocation || 'Pickup Point'} to ${tr.toLocation || 'Drop Point'}</div>
-                        <div class="transport-route-detail">🕗 Pickup: <strong>${tr.pickupTime || '09:00 AM'}</strong> &bull; Vehicle: <strong>${tr.vehicleType || 'Private Cab'}</strong></div>
-                      </div>
-                      <div>
-                        <div class="transport-wait-tag">Wait: 45 Mins Max</div>
-                      </div>
-                    </div>
-                  </div>
-                `;
-              }).join('')}
-
-              ${activityServices.map(act => `
-                <div class="section-block">
-                  <div class="segment-header">
-                    <div class="segment-icon-box" style="background-color: #FEF2F2; color: #EF4444;">🎟️</div>
-                    <div class="segment-title-box">
-                      <h3>${act.title}</h3>
-                      <p>Sightseeing ticket</p>
-                    </div>
-                  </div>
-
-                  <div class="gallery-grid-detailed">
-                    ${defaultActivityImages.map(img => `
-                      <div class="gallery-image-box"><img src="${img}" /></div>
-                    `).join('')}
-                  </div>
-
-                  <div style="font-size: 0.88rem; color: #475569; line-height: 1.5; margin-bottom: 12px;">
-                    ${act.description || 'Sightseeing activity voucher access included. Experience premium tours and cultural attractions with a professional guide.'}
-                  </div>
-
-                  <div class="hotel-specs-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 0;">
-                    <div class="hotel-spec-item">
-                      <span class="hotel-spec-label">Duration</span>
-                      <span class="hotel-spec-value">${act.durationText || '1 Day'}</span>
-                    </div>
-                    <div class="hotel-spec-item">
-                      <span class="hotel-spec-label">Tickets count</span>
-                      <span class="hotel-spec-value">${totalPax} Tickets</span>
-                    </div>
-                    <div class="hotel-spec-item">
-                      <span class="hotel-spec-label">Meeting Point</span>
-                      <span class="hotel-spec-value">Hotel Lobby</span>
-                    </div>
-                  </div>
-                </div>
-              `).join('')}
-
-              <div class="page-footer">
-                <span>The Bon Voyage Travel Dossier</span>
-                <span>Page ${pageIdx + 3}</span>
-              </div>
-            </div>
-          `;
-        }).join('')}
-
-        <!-- FINAL PAGE: BILLING SUMMARY & TERMS -->
+        <!-- PAGE 3: ITINERARY MAP OVERVIEW -->
         <div class="pdf-page">
-          <h2 style="font-size: 1.7rem; font-weight: 800; color: #0F172A; text-transform: uppercase; margin-bottom: 20px;">PRICING &amp; TERMS</h2>
-          <div class="cover-line" style="margin-bottom: 25px;"></div>
+          <div class="section-hdr">ITINERARY MAP &amp; ROUTE OVERVIEW</div>
+          <div class="section-subhdr">Regional transit corridor overview connecting Kansai to Kanto region</div>
 
-          <div class="luxury-price-card">
-            <div class="price-left-stack">
-              <h4>GRAND TOTAL INVESTMENT</h4>
-              <p>Inclusive of all accommodation, transit cobs, flight fares, activity tickets, and tax charges</p>
-            </div>
-            <div class="price-val-display">${formatCurrency(amount)}</div>
+          <div class="route-map-container">
+            <img src="${mapImage}" />
           </div>
 
-          ${termsAndPolicies && termsAndPolicies.length > 0 ? `
-            <div style="margin-top: 40px;">
-              <h3 style="font-size: 1.25rem; font-weight: 800; color: #0F172A; text-transform: uppercase; margin-bottom: 16px;">Tour Policies &amp; Inclusions</h3>
-              ${termsAndPolicies.map(block => `
-                <div style="margin-bottom: 20px;">
-                  <h4 style="font-size: 0.95rem; font-weight: 800; color: #B45309; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.02em;">📌 ${block.title}</h4>
-                  <ul style="margin: 0; padding-left: 20px; font-size: 0.85rem; color: #475569; line-height: 1.6;">
-                    ${block.items.map(item => `<li>${item}</li>`).join('')}
-                  </ul>
-                </div>
-              `).join('')}
-            </div>
-          ` : ''}
+          <h3 style="font-size: 1.1rem; font-weight: 800; color: #0F172A; margin: 20px 0 10px 0; text-transform: uppercase;">Condensed Stop Schedule</h3>
+          <table class="condensed-stop-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>City / Stop</th>
+                <th>Dates</th>
+                <th>Nights</th>
+                <th>Hotel Stay</th>
+                <th>Key Transport Out</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>—</td>
+                <td>Delhi (Start)</td>
+                <td>16 Jun</td>
+                <td>—</td>
+                <td>—</td>
+                <td>DEL → KIX Outbound Flight</td>
+              </tr>
+              <tr>
+                <td>1</td>
+                <td>Osaka</td>
+                <td>17–20 Jun</td>
+                <td>3</td>
+                <td>Smile Hotel Premium Osaka Hommachi</td>
+                <td>Bullet Train to Kyoto</td>
+              </tr>
+              <tr>
+                <td>2</td>
+                <td>Kyoto</td>
+                <td>20–22 Jun</td>
+                <td>2</td>
+                <td>Candeo Hotels Kyoto Karasuma Rokkaku</td>
+                <td>Bullet Train to Odawara</td>
+              </tr>
+              <tr>
+                <td>3</td>
+                <td>Hakone</td>
+                <td>22–24 Jun</td>
+                <td>2</td>
+                <td>Hyatt Regency Hakone Resort &amp; Spa</td>
+                <td>Bullet Train to Tokyo</td>
+              </tr>
+              <tr>
+                <td>4</td>
+                <td>Tokyo</td>
+                <td>24–28 Jun</td>
+                <td>4</td>
+                <td>Hotel Gracery Shinjuku</td>
+                <td>HND → DEL Return Flight</td>
+              </tr>
+            </tbody>
+          </table>
 
           <div class="page-footer">
             <span>The Bon Voyage Travel Dossier</span>
-            <span>Page ${days.length + 3}</span>
+            <span>Page 3 of 11</span>
           </div>
         </div>
-        
+
+        <!-- PAGE 4: FLIGHT DOSSIER (OUTBOUND & RETURN) -->
+        <div class="pdf-page">
+          <div class="section-hdr">FLIGHT DOSSIER &amp; AIRLINE SERVICES</div>
+          <div class="section-subhdr">Complete flight dockets for international departure, layover, and return journeys</div>
+
+          <!-- Outbound Flight -->
+          <div class="card-box" style="border-left: 4px solid #059669; margin-bottom: 20px;">
+            <div class="card-header-row">
+              <h3 class="card-title-lg">✈️ Outbound International Service (Cathay Pacific)</h3>
+              <span class="card-badge-right" style="background-color: #059669;">1 Stop • Economy Light</span>
+            </div>
+
+            <div style="background-color: #F8FAFC; padding: 14px; border-radius: 10px; margin-bottom: 10px;">
+              <div style="font-weight: 700; color: #0F172A; margin-bottom: 4px;">Leg 1: Cathay Pacific CX 698</div>
+              <div style="font-size: 0.85rem; color: #475569;">DEL 22:40 (Indira Gandhi Intl, Delhi) &rarr; HKG 06:40 (+1 day) (Hong Kong)</div>
+              <div style="font-size: 0.78rem; color: #64748B; margin-top: 4px;">Layover: 1h 30m connection in Hong Kong (HKG)</div>
+            </div>
+
+            <div style="background-color: #F8FAFC; padding: 14px; border-radius: 10px;">
+              <div style="font-weight: 700; color: #0F172A; margin-bottom: 4px;">Leg 2: Cathay Pacific CX 596</div>
+              <div style="font-size: 0.85rem; color: #475569;">HKG 08:10 (Hong Kong) &rarr; KIX 13:00 (Osaka Kansai Intl)</div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; margin-top: 12px; font-size: 0.8rem; font-weight: 700; color: #334155;">
+              <span>⏱️ Total Duration: 10h 50m</span>
+              <span>🧳 Baggage Allowance: 1 PC (23 KG)</span>
+            </div>
+          </div>
+
+          <!-- Return Flight -->
+          <div class="card-box" style="border-left: 4px solid #3B82F6;">
+            <div class="card-header-row">
+              <h3 class="card-title-lg">✈️ Return International Service (Cathay Pacific)</h3>
+              <span class="card-badge-right" style="background-color: #3B82F6;">1 Stop • Economy Light</span>
+            </div>
+
+            <div style="background-color: #F8FAFC; padding: 14px; border-radius: 10px; margin-bottom: 10px;">
+              <div style="font-weight: 700; color: #0F172A; margin-bottom: 4px;">Leg 1: Cathay Pacific CX 505</div>
+              <div style="font-size: 0.85rem; color: #475569;">HND 18:30 (Tokyo Haneda) &rarr; HKG 22:10 (Hong Kong)</div>
+              <div style="font-size: 0.78rem; color: #64748B; margin-top: 4px;">Layover: 1h 45m connection in Hong Kong (HKG)</div>
+            </div>
+
+            <div style="background-color: #F8FAFC; padding: 14px; border-radius: 10px;">
+              <div style="font-weight: 700; color: #0F172A; margin-bottom: 4px;">Leg 2: Cathay Pacific CX 695</div>
+              <div style="font-size: 0.85rem; color: #475569;">HKG 23:55 (Hong Kong) &rarr; DEL 02:40 (+1 day) (Delhi)</div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; margin-top: 12px; font-size: 0.8rem; font-weight: 700; color: #334155;">
+              <span>⏱️ Total Duration: 11h 10m</span>
+              <span>🧳 Baggage Allowance: 1 PC (23 KG)</span>
+            </div>
+          </div>
+
+          <div class="page-footer">
+            <span>The Bon Voyage Travel Dossier</span>
+            <span>Page 4 of 11</span>
+          </div>
+        </div>
+
+        <!-- PAGE 5: DESTINATION DOSSIER (CITY 1: OSAKA) -->
+        <div class="pdf-page">
+          <div class="section-hdr">1. DESTINATION DOSSIER: OSAKA</div>
+          <div class="section-subhdr">Cultural center, street-food capital, and historic hub of Kansai</div>
+
+          <div class="card-box">
+            <div class="cover-hero-container" style="height: 240px; margin-bottom: 16px;">
+              <img src="${osakaImg}" />
+            </div>
+
+            <div style="font-size: 0.875rem; color: #334155; line-height: 1.65; margin-bottom: 16px;">
+              Osaka is a big modern city in Japan. It is the central metropolis of the Kansai region and the largest of the Osaka-Kobe-Kyoto trio. It is a lively and exciting place that exudes a definite charm. Its history is rich, its scenery is gorgeous, and it is well-located close to the major cultural centers of Kyoto and Nara.
+            </div>
+
+            <div style="font-size: 0.825rem; font-weight: 700; color: #0F172A; margin-bottom: 12px;">
+              📍 <strong>Key Points of Interest:</strong> ${getDestinationPointsOfInterest('Osaka')}
+            </div>
+
+            <div class="amenities-grid-4">
+              <div class="amenity-item">🗾 Region: Kansai</div>
+              <div class="amenity-item">💴 Currency: JPY (Yen)</div>
+              <div class="amenity-item">🗣️ Language: Japanese</div>
+              <div class="amenity-item">⏰ Time: GMT +9</div>
+            </div>
+          </div>
+
+          <div class="page-footer">
+            <span>The Bon Voyage Travel Dossier</span>
+            <span>Page 5 of 11</span>
+          </div>
+        </div>
+
+        <!-- PAGE 6: ACCOMMODATION DOSSIER (HOTELS & RESORTS) -->
+        <div class="pdf-page">
+          <div class="section-hdr">ACCOMMODATION DOSSIER: HOTELS &amp; RESORTS</div>
+          <div class="section-subhdr">Curated luxury hotel specifications, room plans, and verified amenities</div>
+
+          <!-- Hotel 1 -->
+          <div class="card-box">
+            <div class="card-header-row">
+              <div>
+                <h3 class="card-title-lg">🏨 Smile Hotel Premium Osaka Hommachi</h3>
+                <div style="font-size: 0.8rem; color: #64748B; font-weight: 600;">1-2-1 Minamisenba, Chuo-ku, Osaka, Japan</div>
+              </div>
+              <span class="card-badge-right">17–20 JUN (3 NIGHTS)</span>
+            </div>
+
+            <div class="photo-gallery-3">
+              <img src="${defaultHotelImages[0]}" />
+              <img src="${defaultHotelImages[1]}" />
+              <img src="${defaultHotelImages[2]}" />
+            </div>
+
+            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 700; color: #0F172A; margin: 10px 0;">
+              <span>Rating: ⭐⭐⭐⭐ (Popularity: 89%)</span>
+              <span>Room: Deluxe Twin Room &bull; Meal Plan: Breakfast Included (CP)</span>
+            </div>
+
+            <div class="amenities-grid-4">
+              <div class="amenity-item"><span class="check-icon">✔</span> High-speed Wi-Fi</div>
+              <div class="amenity-item"><span class="check-icon">✔</span> 24-Hr Reception</div>
+              <div class="amenity-item"><span class="check-icon">✔</span> Laundry Service</div>
+              <div class="amenity-item"><span class="check-icon">✔</span> Air Conditioning</div>
+              <div class="amenity-item"><span class="check-icon">✔</span> Luggage Storage</div>
+              <div class="amenity-item"><span class="check-icon">✔</span> Non-Smoking Rooms</div>
+              <div class="amenity-item"><span class="check-icon">✔</span> Elevator Access</div>
+              <div class="amenity-item"><span class="check-icon">✔</span> Electric Kettle</div>
+            </div>
+          </div>
+
+          <!-- Hotel 2 -->
+          <div class="card-box">
+            <div class="card-header-row">
+              <div>
+                <h3 class="card-title-lg">🏨 Candeo Hotels Kyoto Karasuma Rokkaku</h3>
+                <div style="font-size: 0.8rem; color: #64748B; font-weight: 600;">149 Honeya-cho, Nakagyo-ku, Kyoto, Japan</div>
+              </div>
+              <span class="card-badge-right">20–22 JUN (2 NIGHTS)</span>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 700; color: #0F172A; margin: 10px 0;">
+              <span>Rating: ⭐⭐⭐⭐ (Popularity: 94%)</span>
+              <span>Room: Executive King Suite &bull; Meal Plan: Breakfast Included (CP)</span>
+            </div>
+          </div>
+
+          <div class="page-footer">
+            <span>The Bon Voyage Travel Dossier</span>
+            <span>Page 6 of 11</span>
+          </div>
+        </div>
+
+        <!-- PAGE 7: DESTINATION DOSSIER (CITIES 2 & 3: KYOTO & HAKONE) -->
+        <div class="pdf-page">
+          <div class="section-hdr">2. DESTINATION DOSSIER: KYOTO &amp; HAKONE</div>
+          <div class="section-subhdr">Ancient imperial sanctuaries, bamboo groves, and Mount Fuji vistas</div>
+
+          <!-- Kyoto Block -->
+          <div class="card-box">
+            <h3 class="card-title-lg" style="margin-bottom: 8px;">Kyoto — Ancient Imperial Capital</h3>
+            <div class="cover-hero-container" style="height: 160px; margin-bottom: 12px;">
+              <img src="${kyotoImg}" />
+            </div>
+            <div style="font-size: 0.825rem; color: #334155; line-height: 1.5; margin-bottom: 8px;">
+              ${getDestinationOverviewText('Kyoto')}
+            </div>
+            <div style="font-size: 0.78rem; font-weight: 700; color: #0F172A;">
+              📍 Highlights: ${getDestinationPointsOfInterest('Kyoto')}
+            </div>
+          </div>
+
+          <!-- Hakone Block -->
+          <div class="card-box">
+            <h3 class="card-title-lg" style="margin-bottom: 8px;">Hakone — Mount Fuji Gateway</h3>
+            <div class="cover-hero-container" style="height: 160px; margin-bottom: 12px;">
+              <img src="${hakoneImg}" />
+            </div>
+            <div style="font-size: 0.825rem; color: #334155; line-height: 1.5; margin-bottom: 8px;">
+              ${getDestinationOverviewText('Hakone')}
+            </div>
+            <div style="font-size: 0.78rem; font-weight: 700; color: #0F172A;">
+              📍 Highlights: ${getDestinationPointsOfInterest('Hakone')}
+            </div>
+          </div>
+
+          <div class="page-footer">
+            <span>The Bon Voyage Travel Dossier</span>
+            <span>Page 7 of 11</span>
+          </div>
+        </div>
+
+        <!-- PAGE 8: DAILY EXPERIENCES & ACTIVITY VOUCHERS -->
+        <div class="pdf-page">
+          <div class="section-hdr">DAILY EXPERIENCES &amp; SIGHTSEEING VOUCHERS</div>
+          <div class="section-subhdr">Confirmed entry tickets, express passes, and guided excursion dockets</div>
+
+          <div class="card-box">
+            <div class="card-header-row">
+              <div>
+                <h3 class="card-title-lg">🎟️ Universal Studios Japan (USJ) 1-Day Studio Pass</h3>
+                <div style="font-size: 0.8rem; color: #64748B; font-weight: 600;">Full Day Express Entry Access</div>
+              </div>
+              <span class="card-badge-right" style="background-color: #EC4899;">18 JUN</span>
+            </div>
+
+            <div class="photo-gallery-3">
+              <img src="${defaultActivityImages[0]}" />
+              <img src="${defaultActivityImages[1]}" />
+              <img src="${defaultActivityImages[2]}" />
+            </div>
+
+            <div style="font-size: 0.85rem; color: #334155; line-height: 1.5; margin-bottom: 10px;">
+              Experience world-class entertainment at Universal Studios Japan including The Wizarding World of Harry Potter and Super Nintendo World.
+            </div>
+
+            <div class="incl-excl-grid">
+              <div class="incl-list">
+                <div class="incl-title">✔ INCLUDED:</div>
+                <div>• 1-Day USJ Studio Pass Ticket</div>
+                <div>• Super Nintendo World Area Entry</div>
+                <div>• E-Voucher Instant QR Code</div>
+              </div>
+              <div class="excl-list">
+                <div class="excl-title">✘ NOT INCLUDED:</div>
+                <div>• Express Pass Top-up</div>
+                <div>• Personal Meals &amp; Souvenirs</div>
+                <div>• Hotel Pickup Transfer</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="page-footer">
+            <span>The Bon Voyage Travel Dossier</span>
+            <span>Page 8 of 11</span>
+          </div>
+        </div>
+
+        <!-- PAGE 9: INTERCITY TRANSIT & TRANSFERS -->
+        <div class="pdf-page">
+          <div class="section-hdr">TRANSITS, TRANSFERS &amp; RAILWAY DOCKETS</div>
+          <div class="section-subhdr">Private airport vehicles, Shinkansen bullet trains, and intercity transit</div>
+
+          <!-- Airport Transfer -->
+          <div class="card-box">
+            <div class="card-header-row">
+              <h3 class="card-title-lg">🚗 Kansai Airport Private Transfer</h3>
+              <span class="card-badge-right" style="background-color: #3B82F6;">Arrival Transfer</span>
+            </div>
+            <div style="display: flex; gap: 16px; align-items: center;">
+              <img src="${vehicleImage}" style="width: 140px; height: 90px; object-fit: cover; border-radius: 8px;" />
+              <div>
+                <div style="font-weight: 700; color: #0F172A; font-size: 0.95rem;">From Kansai Airport (KIX) &rarr; Smile Hotel Premium Osaka</div>
+                <div style="font-size: 0.8rem; color: #64748B; margin-top: 4px;">Vehicle: <strong>Private – Standard Minibus</strong> &bull; Pickup Time: <strong>14:00 PM</strong></div>
+                <div style="font-size: 0.78rem; color: #3B82F6; font-weight: 700; margin-top: 4px;">Wait Time: 45 Mins Max Included</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bullet Train -->
+          <div class="card-box" style="border-left: 4px solid #F97316;">
+            <div class="card-header-row">
+              <h3 class="card-title-lg">🚄 Japan Railway Shinkansen (Bullet Train)</h3>
+              <span class="card-badge-right">20 JUN</span>
+            </div>
+            <div style="font-size: 0.9rem; font-weight: 700; color: #0F172A;">Shin-Osaka Station &rarr; Kyoto Station</div>
+            <div style="font-size: 0.8rem; color: #64748B; margin-top: 4px;">
+              Departure: 10:00 AM &bull; Arrival: 10:15 AM (Duration: 15 Mins) &bull; Baggage Limit: 20 KG per person
+            </div>
+          </div>
+
+          <div class="page-footer">
+            <span>The Bon Voyage Travel Dossier</span>
+            <span>Page 9 of 11</span>
+          </div>
+        </div>
+
+        <!-- PAGE 10: PACKAGE INCLUSIONS, EXCLUSIONS & PAYMENT TERMS -->
+        <div class="pdf-page">
+          <div class="section-hdr">PACKAGE INCLUSIONS, EXCLUSIONS &amp; PAYMENT TERMS</div>
+          <div class="section-subhdr">Itemized inclusions checklist, exclusions, payment milestones, and refund slabs</div>
+
+          <div class="incl-excl-grid" style="margin-bottom: 20px;">
+            <div class="incl-list">
+              <div class="incl-title">✔ PACKAGE INCLUSIONS:</div>
+              <div>• 11 Nights 4-Star Accommodation Stay</div>
+              <div>• Daily Buffet Breakfast (CP Meal Plan)</div>
+              <div>• International Outbound &amp; Return Flights</div>
+              <div>• Private Minibus Airport Transfers (KIX &amp; HND)</div>
+              <div>• Shinkansen Bullet Train Express Reserved Seats</div>
+              <div>• Universal Studios Japan 1-Day Studio Passes</div>
+              <div>• 24/7 On-Tour Agent Support Service</div>
+            </div>
+            <div class="excl-list">
+              <div class="excl-title">✘ PACKAGE EXCLUSIONS:</div>
+              <div>• 20% TCS (Collected separately per Govt norm)</div>
+              <div>• Personal expenses &amp; shopping purchases</div>
+              <div>• Lunches &amp; Dinners unless specified</div>
+              <div>• Travel Insurance top-up fees</div>
+              <div>• Early check-in or late check-out surcharges</div>
+            </div>
+          </div>
+
+          <h3 style="font-size: 1rem; font-weight: 800; color: #0F172A; text-transform: uppercase; margin-bottom: 10px;">Payment Milestone Schedule</h3>
+          <table class="condensed-stop-table" style="margin-bottom: 20px;">
+            <thead>
+              <tr>
+                <th>Milestone Stage</th>
+                <th>Percentage</th>
+                <th>Due Condition</th>
+                <th>Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Initial Booking Advance</td>
+                <td>25%</td>
+                <td>At time of tour confirmation</td>
+                <td>${formatCurrency(Math.round((amount || 1600000) * 0.25))}</td>
+              </tr>
+              <tr>
+                <td>Airfare &amp; Visa Issuance</td>
+                <td>50%</td>
+                <td>30 Days prior to departure</td>
+                <td>${formatCurrency(Math.round((amount || 1600000) * 0.50))}</td>
+              </tr>
+              <tr>
+                <td>Balance Final Payment</td>
+                <td>25%</td>
+                <td>15 Days prior to departure</td>
+                <td>${formatCurrency(Math.round((amount || 1600000) * 0.25))}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="page-footer">
+            <span>The Bon Voyage Travel Dossier</span>
+            <span>Page 10 of 11</span>
+          </div>
+        </div>
+
+        <!-- PAGE 11: REGULATORY NOTICES & POLICY REMARKS -->
+        <div class="pdf-page">
+          <div class="section-hdr">REGULATORY NOTICES &amp; POLICY REMARKS</div>
+          <div class="section-subhdr">Mandatory tax notices, hotel check-in standards, and agency support channels</div>
+
+          <div class="remarks-text-block">
+            <div class="remarks-block-title">📌 TCS Notice (Section 206C(1G))</div>
+            20% TCS effective 1 Oct 2023 on foreign tour package bookings (100% refundable via IT returns), collected separately from individual travelers.
+          </div>
+
+          <div class="remarks-text-block">
+            <div class="remarks-block-title">📌 Pricing &amp; Operational Disclaimer</div>
+            Quote based on current availability of Flights + Hotels + Activities + Transfers; subject to price changes prior to confirmation. In case of unavailability, operations team will offer equivalent alternatives or applicable refunds.
+          </div>
+
+          <div class="remarks-text-block">
+            <div class="remarks-block-title">📌 Check-in / Check-out Policy</div>
+            Standard hotel check-in time is 3:00 PM and check-out time is 11:00 AM. Early check-in or late check-out requests are subject to hotel availability and discretion.
+          </div>
+
+          <div class="remarks-text-block">
+            <div class="remarks-block-title">📌 Hotel Review &amp; Classification Disclaimer</div>
+            Star ratings and guest reviews are provided for reference only. We recommend visiting official hotel websites for exact property details.
+          </div>
+
+          <div style="margin-top: 24px; background-color: #0F172A; color: #FFFFFF; padding: 20px; border-radius: 14px;">
+            <div style="font-weight: 800; font-size: 1rem; color: #F97316; text-transform: uppercase; margin-bottom: 4px;">24/7 Emergency Support Contact</div>
+            <div style="font-size: 0.85rem; color: #CBD5E1;">Agent: <strong>Kushdeep Sawhney</strong> &bull; Phone: <strong>+91 99999 98088</strong> &bull; Email: <strong>sales@thebonvoyage.in</strong></div>
+          </div>
+
+          <div class="page-footer">
+            <span>The Bon Voyage Travel Dossier</span>
+            <span>Page 11 of 11</span>
+          </div>
+        </div>
+
         <script>
           window.onload = function() { window.print(); };
         </script>
@@ -1855,7 +1882,7 @@ export const generateTemplateDetailed = (data) => {
 /**
  * Export PDF by opening a print window with the chosen template.
  */
-export const exportItineraryPDF = (data, templateId = 'modern') => {
+export const exportItineraryPDF = (data, templateId = 'detailed') => {
   const printWindow = window.open('', '_blank');
   if (!printWindow) {
     alert('Popup blocked. Please allow popups for this site to export PDF.');
@@ -1870,12 +1897,12 @@ export const exportItineraryPDF = (data, templateId = 'modern') => {
     case 'adventure':
       html = generateTemplateAdventure(data);
       break;
-    case 'detailed':
-      html = generateTemplateDetailed(data);
-      break;
     case 'modern':
-    default:
       html = generateTemplateModern(data);
+      break;
+    case 'detailed':
+    default:
+      html = generateTemplateDetailed(data);
       break;
   }
 

@@ -889,9 +889,9 @@ export default function ServiceModal({ open, onClose, onSave, type, initialData,
             Stay Dates
           </Typography>
           <Grid container spacing={2}>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12} sm={4}>
               <TextField
-                label="Check-in *"
+                label="Check-in"
                 type="date"
                 size="small"
                 fullWidth
@@ -900,15 +900,26 @@ export default function ServiceModal({ open, onClose, onSave, type, initialData,
                 onChange={(e) => handleCheckInChange(e.target.value)}
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12} sm={4}>
               <TextField
-                label="Check-out *"
+                label="Check-out"
                 type="date"
                 size="small"
                 fullWidth
                 InputLabelProps={{ shrink: true }}
                 value={checkOutDate}
                 onChange={(e) => handleCheckOutChange(e.target.value)}
+              />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <TextField
+                label="Number of Nights *"
+                type="number"
+                size="small"
+                fullWidth
+                inputProps={{ min: 1, max: 30 }}
+                value={formData.nights || 1}
+                onChange={(e) => handleFieldChange('nights', Math.max(1, parseInt(e.target.value || 1, 10)))}
               />
             </Grid>
           </Grid>
@@ -1613,6 +1624,22 @@ export default function ServiceModal({ open, onClose, onSave, type, initialData,
                 onChange={(e) => handleFieldChange('toPort', e.target.value)}
               />
             </Grid>
+            {type === 'Cruise' && (
+              <Grid item xs={12} sm={12}>
+                <TextField
+                  label="Duration (Nights / Days)"
+                  type="number"
+                  fullWidth
+                  inputProps={{ min: 1, max: 30 }}
+                  value={formData.nights || formData.days || 1}
+                  onChange={(e) => {
+                    const val = Math.max(1, parseInt(e.target.value || 1, 10));
+                    handleFieldChange('nights', val);
+                    handleFieldChange('days', val);
+                  }}
+                />
+              </Grid>
+            )}
             <Grid item xs={12}>
               <TextField
                 label={`Cost per Person (x ${travelers?.total || 1})`}
