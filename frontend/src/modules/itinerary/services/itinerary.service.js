@@ -127,3 +127,13 @@ export const remove = async (id) => {
   saveStoredItineraries(list);
   return { success: true };
 };
+
+const confirmedBookingsStore = [];
+
+export const registerConfirmedBooking = (bookingData) => {
+  confirmedBookingsStore.push(bookingData);
+  return { success: true, bookingId: bookingData.bookingId, itineraryId: bookingData.itineraryId };
+};
+
+export const getConfirmedBookings = () => confirmedBookingsStore;
+

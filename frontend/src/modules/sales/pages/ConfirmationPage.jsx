@@ -1,9 +1,7 @@
-import ConfirmationWorkspace from '../components/ConfirmationWorkspace';
+import { Navigate } from 'react-router-dom';
 
 function ConfirmationPage() {
-  return (
-    <ConfirmationWorkspace />
-  );
+  return <Navigate to="/sales/confirmation/soft-confirm" replace />;
 }
 
 export default ConfirmationPage;

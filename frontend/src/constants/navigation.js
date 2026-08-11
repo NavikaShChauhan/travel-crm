@@ -8,6 +8,8 @@ import {
   MdOutlineSchedule,
   MdOutlineHandshake,
   MdOutlineCheckCircle,
+  MdOutlineHourglassEmpty,
+  MdOutlineCancel,
   MdOutlineAssessment,
   MdOutlineMap,
   MdOutlineSettingsSuggest,
@@ -54,7 +56,16 @@ export const NAV_ITEMS = [
       { label: 'Proposal', path: `${ROUTES.SALES}/proposal`, icon: MdOutlineDescription },
       { label: 'Follow Up', path: `${ROUTES.SALES}/follow-up`, icon: MdOutlineSchedule },
       { label: 'Negotiation', path: `${ROUTES.SALES}/negotiation`, icon: MdOutlineHandshake },
-      { label: 'Confirmation', path: `${ROUTES.SALES}/confirmation`, icon: MdOutlineCheckCircle },
+      {
+        label: 'Confirmation',
+        path: `${ROUTES.SALES}/confirmation`,
+        icon: MdOutlineCheckCircle,
+        children: [
+          { label: 'Soft Confirm', path: `${ROUTES.SALES}/confirmation/soft-confirm`, icon: MdOutlineHourglassEmpty },
+          { label: 'Confirmed', path: `${ROUTES.SALES}/confirmation/confirmed`, icon: MdOutlineCheckCircle },
+          { label: 'Rejected', path: `${ROUTES.SALES}/confirmation/rejected`, icon: MdOutlineCancel },
+        ],
+      },
       { label: 'Analytics', path: `${ROUTES.SALES}/analytics`, icon: MdOutlineAssessment },
     ],
   },
@@ -85,9 +96,15 @@ export const ROUTE_LABELS = NAV_ITEMS.reduce((acc, item) => {
   if (item.children) {
     item.children.forEach((child) => {
       acc[child.path] = child.label;
+      if (child.children) {
+        child.children.forEach((subChild) => {
+          acc[subChild.path] = subChild.label;
+        });
+      }
     });
   }
   return acc;
 }, {
   [ROUTES.NOTIFICATIONS]: 'Notifications',
 });
+

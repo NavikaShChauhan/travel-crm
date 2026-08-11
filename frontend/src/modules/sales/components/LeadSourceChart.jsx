@@ -59,7 +59,7 @@ function LeadSourceChart({ sources }) {
   }));
 
   return (
-    <Card sx={{ p: 3, height: '100%' }}>
+    <Card sx={{ p: 2, borderRadius: 2.5, height: '100%' }}>
       <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 0.5 }}>
         Lead Source Distribution
       </Typography>

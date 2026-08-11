@@ -30,6 +30,7 @@ import { formatCurrency } from '@utils/formatters';
 import { tokens } from '@styles/theme';
 import SelectQualifiedLeadModal from './SelectQualifiedLeadModal';
 import CreateProposalWizard from './CreateProposalWizard';
+import CreateRevisionModal from './CreateRevisionModal';
 
 const INITIAL_PROPOSALS = [
   {
@@ -42,7 +43,10 @@ const INITIAL_PROPOSALS = [
     progress: 68,
     next: 'Review customer price request',
     executive: 'Priya Sharma',
-    versions: ['V1 · Initial proposal', 'V2 · Hotel upgrade'],
+    versions: ['V1 · Initial proposal (₹2,40,000)', 'V2 · Hotel upgrade (₹2,69,040)'],
+    hotel: 'XYZ Resort & Spa',
+    roomType: 'Premium Beachfront Villa',
+    mealPlan: 'Breakfast & Dinner',
   },
   {
     id: 'PR-2602',
@@ -54,7 +58,10 @@ const INITIAL_PROPOSALS = [
     progress: 52,
     next: 'Call to understand preferences',
     executive: 'Arjun Nair',
-    versions: ['V1 · Initial proposal'],
+    versions: ['V1 · Initial proposal (₹1,35,700)'],
+    hotel: 'Kumarakom Lake Resort',
+    roomType: 'Meandering Pool Villa',
+    mealPlan: 'Breakfast',
   },
   {
     id: 'PR-2603',
@@ -66,13 +73,17 @@ const INITIAL_PROPOSALS = [
     progress: 82,
     next: 'Share final room configuration',
     executive: 'Meera Pillai',
-    versions: ['V1 · Initial proposal', 'V2 · Added Jaisalmer', 'V3 · Room revision'],
+    versions: ['V1 · Initial proposal (₹3,85,000)', 'V2 · Added Jaisalmer (₹4,10,000)', 'V3 · Room revision (₹4,30,700)'],
+    hotel: 'Suryagarh Jaisalmer',
+    roomType: 'Heritage Suite',
+    mealPlan: 'Breakfast & Dinner',
   },
 ];
 
 const statusColor = {
   Draft: tokens.color.ink400,
   'Needs follow-up': tokens.color.gold600,
+  'Revision Draft': tokens.color.gold600,
   Viewed: '#2563EB',
   'In negotiation': tokens.color.teal500,
   Sent: tokens.color.teal500,
@@ -89,6 +100,9 @@ function ProposalDashboard() {
   const [isSelectLeadOpen, setIsSelectLeadOpen] = useState(false);
   const [selectedLeadForProposal, setSelectedLeadForProposal] = useState(null);
   const [isWizardOpen, setIsWizardOpen] = useState(false);
+
+  // Revision Modal State
+  const [isRevisionModalOpen, setIsRevisionModalOpen] = useState(false);
 
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isActivityOpen, setIsActivityOpen] = useState(false);
@@ -134,20 +148,60 @@ function ProposalDashboard() {
     setNotification(`Version removed from proposal ${selected.id}.`);
   };
 
-  const revise = () =>
+  // Revision Handlers
+  const handleSaveRevision = (payload) => {
     setProposals((items) =>
       items.map((proposal) =>
-        proposal.id === selected.id
+        proposal.id === payload.proposalId
           ? {
             ...proposal,
-            version: proposal.version + 1,
-            status: 'Needs follow-up',
-            progress: Math.min(proposal.progress + 6, 100),
-            versions: [...proposal.versions, `V${proposal.version + 1} · Customer revision`],
+            version: payload.version,
+            amount: payload.amount,
+            status: payload.status,
+            destination: payload.destination,
+            hotel: payload.hotel,
+            roomType: payload.roomType,
+            mealPlan: payload.mealPlan,
+            progress: Math.min(proposal.progress + 8, 95),
+            next: `Review V${payload.version} draft for ${payload.customer}`,
+            versions: [
+              ...proposal.versions,
+              `V${payload.version} · ${payload.revisionReason} (${formatCurrency(payload.amount)})`,
+            ],
           }
           : proposal
       )
     );
+    setNotification(`Saved ${payload.proposalId} V${payload.version} as Revision Draft.`);
+  };
+
+  const handleSendRevision = (payload, options) => {
+    setProposals((items) =>
+      items.map((proposal) =>
+        proposal.id === payload.proposalId
+          ? {
+            ...proposal,
+            version: payload.version,
+            amount: payload.amount,
+            status: 'Sent',
+            destination: payload.destination,
+            hotel: payload.hotel,
+            roomType: payload.roomType,
+            mealPlan: payload.mealPlan,
+            progress: Math.max(proposal.progress, 75),
+            next: `Wait for customer feedback on V${payload.version}`,
+            versions: [
+              ...proposal.versions,
+              `V${payload.version} · ${payload.revisionReason} (${formatCurrency(payload.amount)})`,
+            ],
+          }
+          : proposal
+      )
+    );
+    setNotification(
+      `Proposal ${payload.proposalId} V${payload.version} sent via ${options.channel} to ${payload.customer}!`
+    );
+  };
 
   const sendProposal = () => {
     setProposals((items) =>
@@ -168,7 +222,7 @@ function ProposalDashboard() {
   const metrics = [
     ['Working proposals', proposals.length],
     ['Waiting for customer', proposals.filter((p) => p.status === 'Needs follow-up').length],
-    ['Ready to send', proposals.filter((p) => p.status === 'Draft').length],
+    ['Ready to send', proposals.filter((p) => p.status === 'Draft' || p.status === 'Revision Draft').length],
     ['Accepted this month', 14],
     ['Proposal value', formatCurrency(proposals.reduce((sum, p) => sum + p.amount, 0))],
   ];
@@ -244,7 +298,7 @@ function ProposalDashboard() {
                       {proposal.customer}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
-                      {proposal.id} · {proposal.destination}
+                      {proposal.id} (V{proposal.version}) · {proposal.destination}
                     </Typography>
                   </Box>
                   <Chip
@@ -274,7 +328,7 @@ function ProposalDashboard() {
                   {selected.customer}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  {selected.id} · {selected.destination} · {selected.executive}
+                  {selected.id} · Version V{selected.version} · {selected.destination} · {selected.executive}
                 </Typography>
               </Box>
               <Typography variant="h6" sx={{ color: tokens.color.navy700, fontWeight: 700 }}>
@@ -317,7 +371,7 @@ function ProposalDashboard() {
 
               <Box>
                 <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                  Version story
+                  Version story ({selected.id})
                 </Typography>
                 <Stack spacing={0.75} sx={{ mt: 1 }}>
                   {selected.versions.map((version, index) => (
@@ -360,7 +414,12 @@ function ProposalDashboard() {
                 <Button size="small" variant="contained" startIcon={<MdSend />} onClick={sendProposal}>
                   Send proposal
                 </Button>
-                <Button size="small" variant="outlined" startIcon={<MdContentCopy />} onClick={revise}>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  startIcon={<MdContentCopy />}
+                  onClick={() => setIsRevisionModalOpen(true)}
+                >
                   Create revised proposal
                 </Button>
                 <Button size="small" variant="outlined" startIcon={<MdOutlineDescription />} onClick={() => setIsPreviewOpen(true)}>
@@ -391,6 +450,18 @@ function ProposalDashboard() {
           </Card>
         )}
       </Box>
+
+      {/* Revision Modal */}
+      {selected && (
+        <CreateRevisionModal
+          open={isRevisionModalOpen}
+          onClose={() => setIsRevisionModalOpen(false)}
+          proposal={selected}
+          onSaveRevision={handleSaveRevision}
+          onSendRevision={handleSendRevision}
+        />
+      )}
+
 
       {/* Delete Confirmation Modal */}
       <Dialog open={Boolean(proposalToDelete)} onClose={() => setProposalToDelete(null)}>
