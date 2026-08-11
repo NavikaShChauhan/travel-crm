@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -11,15 +11,26 @@ import {
   Button,
   Grid,
   IconButton,
-  Switch,
-  FormControlLabel,
   Divider,
   Slider,
+  Stack,
+  Chip,
+  InputAdornment,
 } from '@mui/material';
-import { MdClose, MdEditNote } from 'react-icons/md';
+import { MdClose, MdEditNote, MdContentCopy } from 'react-icons/md';
 import { useInquiry } from '../contexts/InquiryContext';
 
-const TRAVEL_PURPOSE_OPTIONS = ['Leisure', 'Honeymoon', 'Family', 'Corporate', 'Group'];
+const TRAVEL_PURPOSE_OPTIONS = [
+  'Leisure',
+  'Honeymoon',
+  'Family',
+  'Corporate',
+  'Group',
+  'Adventure',
+  'Pilgrimage',
+  'Other',
+];
+
 const SOURCE_OPTIONS = [
   'Manual',
   'Website',
@@ -31,6 +42,7 @@ const SOURCE_OPTIONS = [
   'Referral',
   'Google Ads',
 ];
+
 const LEAD_STATUS_OPTIONS = [
   'New',
   'Contacted',
@@ -42,11 +54,79 @@ const LEAD_STATUS_OPTIONS = [
   'Lost',
   'Closed',
 ];
+
+const LEAD_STAGE_OPTIONS = [
+  'New Lead',
+  'Qualification',
+  'Proposal Sent',
+  'Negotiation',
+  'Closed Won',
+  'Closed Lost',
+];
+
 const PRIORITY_OPTIONS = ['Hot', 'Warm', 'Cold'];
-const SALES_USERS = ['Priya Nair', 'Neha Gupta', 'Rahul Sharma', 'Ananya Roy', 'Priya Sharma', 'Arjun Nair'];
-const HOTEL_CATEGORY_OPTIONS = ['3★', '4★', '5★', 'Luxury Resort', 'Boutique Hotel'];
-const MEAL_OPTIONS = ['Breakfast Only', 'Half Board', 'Full Board', 'All Inclusive'];
-const FOLLOWUP_MODES = ['Call', 'WhatsApp', 'Email', 'Meeting'];
+
+const SALES_USERS = [
+  'Priya Nair',
+  'Neha Gupta',
+  'Rahul Sharma',
+  'Ananya Roy',
+  'Priya Sharma',
+  'Arjun Nair',
+];
+
+const HOTEL_CATEGORY_OPTIONS = [
+  '3★',
+  '4★',
+  '5★',
+  'Luxury Resort',
+  'Boutique Hotel',
+  'Budget / Homestay',
+];
+
+const MEAL_OPTIONS = [
+  'Breakfast Only (CP)',
+  'Half Board (MAP)',
+  'Full Board (AP)',
+  'All Inclusive',
+  'Room Only (EP)',
+];
+
+const TRANSPORTATION_OPTIONS = [
+  'Private Cab',
+  'Shared Transfers',
+  'Train',
+  'Bus',
+  'Self-Drive',
+  'Flight Only',
+  'Not Required',
+];
+
+const FOLLOWUP_MODES = ['Call', 'WhatsApp', 'Email', 'Meeting', 'Video Call'];
+
+const CUSTOMER_TYPE_OPTIONS = ['Individual', 'Corporate', 'B2B'];
+
+const CUSTOMER_CATEGORY_OPTIONS = ['New', 'Existing', 'Repeat', 'VIP'];
+
+// Helper label component with red asterisk for mandatory fields
+function FieldLabel({ label, required = false }) {
+  return (
+    <Typography
+      variant="caption"
+      sx={{
+        fontWeight: 700,
+        color: '#475569',
+        mb: 0.5,
+        display: 'block',
+        textTransform: 'uppercase',
+        fontSize: 11,
+      }}
+    >
+      {label}
+      {required && <span style={{ color: '#EF4444', marginLeft: '4px', fontSize: '13px' }}>*</span>}
+    </Typography>
+  );
+}
 
 export default function EditLeadModal({ open, onClose, lead }) {
   const { updateLead } = useInquiry();
@@ -58,7 +138,6 @@ export default function EditLeadModal({ open, onClose, lead }) {
     alternatePhone: '',
     email: '',
     whatsappNumber: '',
-    companyName: '',
 
     // Section 2: Travel Information
     destination: '',
@@ -76,21 +155,21 @@ export default function EditLeadModal({ open, onClose, lead }) {
     // Section 3: Customer Preferences
     budget: '',
     hotelCategory: '4★',
-    mealPreference: 'Breakfast Only',
-    flightRequired: false,
-    trainRequired: false,
-    cabRequired: false,
-    visaRequired: false,
-    passportAvailable: false,
-    travelInsuranceRequired: false,
+    mealPreference: 'Breakfast Only (CP)',
+    transportationRequired: 'Private Cab',
+    flightRequired: 'No',
+    visaRequired: 'No',
+    travelInsuranceRequired: 'No',
 
     // Section 4: Lead Management
     leadStatus: 'New',
+    leadStage: 'New Lead',
     priority: 'Warm',
     assignedSalesUser: 'Priya Nair',
     source: 'Manual',
     expectedBookingDate: '',
     probabilityPct: 50,
+    estimatedDealValue: '',
 
     // Section 5: Follow-up Information
     lastContactDate: '',
@@ -100,9 +179,11 @@ export default function EditLeadModal({ open, onClose, lead }) {
 
     // Section 6: Customer Requirements
     customerRequirements: '',
-
-    // Section 7: Internal Notes
     internalNotes: '',
+
+    // Section 7: Customer Classification
+    customerType: 'Individual',
+    customerCategory: 'New',
   });
 
   useEffect(() => {
@@ -113,7 +194,6 @@ export default function EditLeadModal({ open, onClose, lead }) {
         alternatePhone: lead.alternatePhone || '',
         email: lead.email || lead.contactEmail || '',
         whatsappNumber: lead.whatsappNumber || lead.phone || '',
-        companyName: lead.companyName || '',
 
         destination: lead.destination || (Array.isArray(lead.destinations) ? lead.destinations.join(', ') : ''),
         departureCity: lead.departureCity || '',
@@ -129,20 +209,20 @@ export default function EditLeadModal({ open, onClose, lead }) {
 
         budget: lead.budget || '',
         hotelCategory: lead.hotelCategory || '4★',
-        mealPreference: lead.mealPreference || 'Breakfast Only',
-        flightRequired: Boolean(lead.flightRequired),
-        trainRequired: Boolean(lead.trainRequired),
-        cabRequired: Boolean(lead.cabRequired),
-        visaRequired: Boolean(lead.visaRequired),
-        passportAvailable: Boolean(lead.passportAvailable),
-        travelInsuranceRequired: Boolean(lead.travelInsuranceRequired),
+        mealPreference: lead.mealPreference || 'Breakfast Only (CP)',
+        transportationRequired: lead.transportationRequired || 'Private Cab',
+        flightRequired: lead.flightRequired ? 'Yes' : 'No',
+        visaRequired: lead.visaRequired ? 'Yes' : 'No',
+        travelInsuranceRequired: lead.travelInsuranceRequired ? 'Yes' : 'No',
 
-        leadStatus: lead.leadStatus || lead.status || lead.stage || 'New',
+        leadStatus: lead.leadStatus || lead.status || 'New',
+        leadStage: lead.leadStage || lead.stage || 'New Lead',
         priority: lead.priority || lead.temperature || 'Warm',
         assignedSalesUser: lead.assignedSalesUser || lead.salesExecutive || 'Priya Nair',
         source: lead.source || lead.leadSource || 'Manual',
         expectedBookingDate: lead.expectedBookingDate || '',
         probabilityPct: lead.probabilityPct !== undefined ? lead.probabilityPct : 50,
+        estimatedDealValue: lead.estimatedDealValue !== undefined ? lead.estimatedDealValue : '',
 
         lastContactDate: lead.lastContactDate || '',
         nextFollowupDate: lead.nextFollowupDate || '',
@@ -151,9 +231,23 @@ export default function EditLeadModal({ open, onClose, lead }) {
 
         customerRequirements: lead.customerRequirements || lead.description || '',
         internalNotes: lead.internalNotes || '',
+
+        customerType: lead.customerType || 'Individual',
+        customerCategory: lead.customerCategory || 'New',
       });
     }
   }, [lead]);
+
+  // Calculate Number of Nights automatically
+  const numberOfNights = useMemo(() => {
+    if (!formData.travelStart || !formData.travelEnd) return 0;
+    const dStart = new Date(formData.travelStart);
+    const dEnd = new Date(formData.travelEnd);
+    if (isNaN(dStart.getTime()) || isNaN(dEnd.getTime())) return 0;
+    const diffTime = dEnd.getTime() - dStart.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays > 0 ? diffDays : 0;
+  }, [formData.travelStart, formData.travelEnd]);
 
   // Dynamically update childAges array length when children count changes
   useEffect(() => {
@@ -195,6 +289,12 @@ export default function EditLeadModal({ open, onClose, lead }) {
     }));
   };
 
+  const handleCopyMobileToWhatsapp = () => {
+    if (formData.phone) {
+      setFormData((prev) => ({ ...prev, whatsappNumber: prev.phone }));
+    }
+  };
+
   const handleChildAgeChange = (index, val) => {
     setFormData((prev) => {
       const updated = [...prev.childAges];
@@ -218,9 +318,13 @@ export default function EditLeadModal({ open, onClose, lead }) {
     if (lead && lead.id) {
       updateLead(lead.id, {
         ...formData,
+        durationNights: numberOfNights,
+        flightRequired: formData.flightRequired === 'Yes',
+        visaRequired: formData.visaRequired === 'Yes',
+        travelInsuranceRequired: formData.travelInsuranceRequired === 'Yes',
         pax: totalPax,
         totalPax: totalPax,
-        stage: formData.leadStatus,
+        stage: formData.leadStage || formData.leadStatus,
         status: formData.leadStatus,
       });
     }
@@ -238,19 +342,28 @@ export default function EditLeadModal({ open, onClose, lead }) {
       PaperProps={{
         sx: {
           borderRadius: '16px',
-          p: 1.5,
+          p: 1,
           bgcolor: '#FFFFFF',
           boxShadow: '0 20px 40px rgba(0,0,0,0.12)',
         },
       }}
     >
-      <DialogTitle sx={{ m: 0, p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <DialogTitle
+        sx={{
+          m: 0,
+          p: 2,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          borderBottom: '1px solid #E2E8F0',
+        }}
+      >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
           <Box
             sx={{
-              width: 36,
-              height: 36,
-              borderRadius: '8px',
+              width: 40,
+              height: 40,
+              borderRadius: '10px',
               bgcolor: '#EFF6FF',
               color: '#2563EB',
               display: 'flex',
@@ -261,11 +374,18 @@ export default function EditLeadModal({ open, onClose, lead }) {
             <MdEditNote size={24} />
           </Box>
           <Box>
-            <Typography variant="h6" sx={{ fontWeight: 700, fontSize: 18, color: '#1E293B' }}>
-              Edit Full Lead Details ({lead.id})
-            </Typography>
+            <Stack direction="row" spacing={1} alignItems="center">
+              <Typography variant="h6" sx={{ fontWeight: 800, fontSize: 18, color: '#0F172A' }}>
+                Edit Lead Details ({lead.id})
+              </Typography>
+              <Chip
+                label="7 Sections"
+                size="small"
+                sx={{ bgcolor: '#EFF6FF', color: '#2563EB', fontWeight: 700, fontSize: 11 }}
+              />
+            </Stack>
             <Typography variant="caption" sx={{ color: '#64748B' }}>
-              Complete 7-Section Lead Management & Preference Form
+              Update enquiry information. Mandatory fields marked with <span style={{ color: '#EF4444' }}>*</span>.
             </Typography>
           </Box>
         </Box>
@@ -279,115 +399,152 @@ export default function EditLeadModal({ open, onClose, lead }) {
           <Grid container spacing={2.5}>
             {/* Section 1: Basic Information */}
             <Grid item xs={12}>
-              <Typography variant="caption" sx={{ fontWeight: 800, color: '#2563EB', textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', mb: 0.5 }}>
-                1. Basic Information (Contact Details)
+              <Typography
+                variant="caption"
+                sx={{
+                  fontWeight: 800,
+                  color: '#2563EB',
+                  textTransform: 'uppercase',
+                  letterSpacing: 0.5,
+                  display: 'block',
+                  mb: 0.5,
+                  fontSize: 12,
+                }}
+              >
+                1. Basic Information
               </Typography>
               <Divider />
             </Grid>
 
+            {/* Change #1: Remove duplicate "Auto" */}
             <Grid item xs={12} sm={6} md={4}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', mb: 0.5, display: 'block', textTransform: 'uppercase', fontSize: 11 }}>
-                Customer Name*
-              </Typography>
+              <FieldLabel label="Lead ID — Auto-generated" />
+              <TextField
+                fullWidth
+                size="small"
+                value={lead.id}
+                disabled
+                InputProps={{
+                  sx: { bgcolor: '#F8FAFC', fontWeight: 700, color: '#2563EB' },
+                }}
+              />
+            </Grid>
+
+            <Grid item xs={12} sm={6} md={4}>
+              <FieldLabel label="Customer Name" required />
               <TextField fullWidth name="clientName" value={formData.clientName} onChange={handleChange} size="small" required />
             </Grid>
 
             <Grid item xs={12} sm={6} md={4}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', mb: 0.5, display: 'block', textTransform: 'uppercase', fontSize: 11 }}>
-                Mobile Number*
-              </Typography>
+              <FieldLabel label="Mobile Number" required />
               <TextField fullWidth name="phone" value={formData.phone} onChange={handleChange} size="small" required />
             </Grid>
 
             <Grid item xs={12} sm={6} md={4}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', mb: 0.5, display: 'block', textTransform: 'uppercase', fontSize: 11 }}>
-                Alternate Mobile
-              </Typography>
+              <FieldLabel label="Alternate Mobile" />
               <TextField fullWidth name="alternatePhone" value={formData.alternatePhone} onChange={handleChange} size="small" />
             </Grid>
 
             <Grid item xs={12} sm={6} md={4}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', mb: 0.5, display: 'block', textTransform: 'uppercase', fontSize: 11 }}>
-                Email
-              </Typography>
-              <TextField fullWidth name="email" value={formData.email} onChange={handleChange} size="small" />
+              <FieldLabel label="Email" />
+              <TextField fullWidth type="email" name="email" value={formData.email} onChange={handleChange} size="small" />
             </Grid>
 
             <Grid item xs={12} sm={6} md={4}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', mb: 0.5, display: 'block', textTransform: 'uppercase', fontSize: 11 }}>
-                WhatsApp Number
-              </Typography>
-              <TextField fullWidth name="whatsappNumber" value={formData.whatsappNumber} onChange={handleChange} size="small" />
-            </Grid>
-
-            <Grid item xs={12} sm={6} md={4}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', mb: 0.5, display: 'block', textTransform: 'uppercase', fontSize: 11 }}>
-                Company Name
-              </Typography>
-              <TextField fullWidth name="companyName" value={formData.companyName} onChange={handleChange} size="small" />
+              <FieldLabel label="WhatsApp Number" />
+              <TextField
+                fullWidth
+                name="whatsappNumber"
+                value={formData.whatsappNumber}
+                onChange={handleChange}
+                size="small"
+                InputProps={{
+                  endAdornment: formData.phone && formData.phone !== formData.whatsappNumber && (
+                    <InputAdornment position="end">
+                      <IconButton
+                        size="small"
+                        title="Copy Mobile Number"
+                        onClick={handleCopyMobileToWhatsapp}
+                        sx={{ color: '#2563EB' }}
+                      >
+                        <MdContentCopy size={16} />
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+              />
             </Grid>
 
             {/* Section 2: Travel Information */}
             <Grid item xs={12} sx={{ mt: 1 }}>
-              <Typography variant="caption" sx={{ fontWeight: 800, color: '#2563EB', textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', mb: 0.5 }}>
+              <Typography
+                variant="caption"
+                sx={{
+                  fontWeight: 800,
+                  color: '#2563EB',
+                  textTransform: 'uppercase',
+                  letterSpacing: 0.5,
+                  display: 'block',
+                  mb: 0.5,
+                  fontSize: 12,
+                }}
+              >
                 2. Travel Information
               </Typography>
               <Divider />
             </Grid>
 
             <Grid item xs={12} sm={6} md={3}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', mb: 0.5, display: 'block', textTransform: 'uppercase', fontSize: 11 }}>
-                Destination*
-              </Typography>
+              <FieldLabel label="Destination" required />
               <TextField fullWidth name="destination" value={formData.destination} onChange={handleChange} size="small" required />
             </Grid>
 
             <Grid item xs={12} sm={6} md={3}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', mb: 0.5, display: 'block', textTransform: 'uppercase', fontSize: 11 }}>
-                Departure City*
-              </Typography>
+              <FieldLabel label="Departure City" required />
               <TextField fullWidth name="departureCity" value={formData.departureCity} onChange={handleChange} size="small" required />
             </Grid>
 
             <Grid item xs={12} sm={6} md={3}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', mb: 0.5, display: 'block', textTransform: 'uppercase', fontSize: 11 }}>
-                Departure Date*
-              </Typography>
-              <TextField fullWidth name="travelStart" value={formData.travelStart} onChange={handleChange} size="small" required />
+              <FieldLabel label="Departure Date" required />
+              <TextField fullWidth type="date" name="travelStart" value={formData.travelStart} onChange={handleChange} size="small" InputLabelProps={{ shrink: true }} required />
             </Grid>
 
             <Grid item xs={12} sm={6} md={3}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', mb: 0.5, display: 'block', textTransform: 'uppercase', fontSize: 11 }}>
-                Return Date
-              </Typography>
-              <TextField fullWidth name="travelEnd" value={formData.travelEnd} onChange={handleChange} size="small" />
+              <FieldLabel label="Return Date" />
+              <TextField fullWidth type="date" name="travelEnd" value={formData.travelEnd} onChange={handleChange} size="small" InputLabelProps={{ shrink: true }} />
             </Grid>
 
-            <Grid item xs={4} sm={2}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', mb: 0.5, display: 'block', textTransform: 'uppercase', fontSize: 11 }}>
-                Adults*
-              </Typography>
-              <TextField fullWidth type="number" name="adults" value={formData.adults} onChange={handleChange} size="small" />
+            {/* Change #4: Number of Nights — Auto */}
+            <Grid item xs={12} sm={6} md={3}>
+              <FieldLabel label="Number of Nights — Auto" />
+              <TextField
+                fullWidth
+                size="small"
+                value={formData.travelStart && formData.travelEnd ? `${numberOfNights} Nights` : 'Auto Calculated'}
+                disabled
+                InputProps={{
+                  sx: { bgcolor: '#F8FAFC', fontWeight: 700, color: '#0EA5E9' },
+                }}
+              />
             </Grid>
 
-            <Grid item xs={4} sm={2}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', mb: 0.5, display: 'block', textTransform: 'uppercase', fontSize: 11 }}>
-                Children
-              </Typography>
-              <TextField fullWidth type="number" name="children" value={formData.children} onChange={handleChange} size="small" />
+            <Grid item xs={4} sm={3} md={3}>
+              <FieldLabel label="Adults" required />
+              <TextField fullWidth type="number" name="adults" inputProps={{ min: 1 }} value={formData.adults} onChange={handleChange} size="small" required />
             </Grid>
 
-            <Grid item xs={4} sm={2}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', mb: 0.5, display: 'block', textTransform: 'uppercase', fontSize: 11 }}>
-                Infants
-              </Typography>
-              <TextField fullWidth type="number" name="infants" value={formData.infants} onChange={handleChange} size="small" />
+            <Grid item xs={4} sm={3} md={3}>
+              <FieldLabel label="Children" />
+              <TextField fullWidth type="number" name="children" inputProps={{ min: 0 }} value={formData.children} onChange={handleChange} size="small" />
+            </Grid>
+
+            <Grid item xs={4} sm={3} md={3}>
+              <FieldLabel label="Infants" />
+              <TextField fullWidth type="number" name="infants" inputProps={{ min: 0 }} value={formData.infants} onChange={handleChange} size="small" />
             </Grid>
 
             <Grid item xs={12} sm={6} md={3}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', mb: 0.5, display: 'block', textTransform: 'uppercase', fontSize: 11 }}>
-                Trip Type
-              </Typography>
+              <FieldLabel label="Trip Type" />
               <TextField select fullWidth name="travelType" value={formData.travelType} onChange={handleChange} size="small">
                 {['Domestic', 'International'].map((opt) => (
                   <MenuItem key={opt} value={opt}>{opt}</MenuItem>
@@ -396,9 +553,7 @@ export default function EditLeadModal({ open, onClose, lead }) {
             </Grid>
 
             <Grid item xs={12} sm={6} md={3}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', mb: 0.5, display: 'block', textTransform: 'uppercase', fontSize: 11 }}>
-                Travel Purpose (Inquiry Type)
-              </Typography>
+              <FieldLabel label="Travel Purpose" />
               <TextField select fullWidth name="travelPurpose" value={formData.travelPurpose} onChange={handleChange} size="small">
                 {TRAVEL_PURPOSE_OPTIONS.map((opt) => (
                   <MenuItem key={opt} value={opt}>{opt}</MenuItem>
@@ -438,23 +593,39 @@ export default function EditLeadModal({ open, onClose, lead }) {
 
             {/* Section 3: Customer Preferences */}
             <Grid item xs={12} sx={{ mt: 1 }}>
-              <Typography variant="caption" sx={{ fontWeight: 800, color: '#2563EB', textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', mb: 0.5 }}>
-                3. Customer Preferences & Transport
+              <Typography
+                variant="caption"
+                sx={{
+                  fontWeight: 800,
+                  color: '#2563EB',
+                  textTransform: 'uppercase',
+                  letterSpacing: 0.5,
+                  display: 'block',
+                  mb: 0.5,
+                  fontSize: 12,
+                }}
+              >
+                3. Travel Preferences
               </Typography>
               <Divider />
             </Grid>
 
-            <Grid item xs={12} sm={6} md={4}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', mb: 0.5, display: 'block', textTransform: 'uppercase', fontSize: 11 }}>
-                Budget
-              </Typography>
-              <TextField fullWidth name="budget" value={formData.budget} onChange={handleChange} size="small" />
+            <Grid item xs={12} sm={6} md={3}>
+              <FieldLabel label="Budget ₹" />
+              <TextField
+                fullWidth
+                name="budget"
+                value={formData.budget}
+                onChange={handleChange}
+                size="small"
+                InputProps={{
+                  startAdornment: <InputAdornment position="start">₹</InputAdornment>,
+                }}
+              />
             </Grid>
 
-            <Grid item xs={12} sm={6} md={4}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', mb: 0.5, display: 'block', textTransform: 'uppercase', fontSize: 11 }}>
-                Hotel Category
-              </Typography>
+            <Grid item xs={12} sm={6} md={3}>
+              <FieldLabel label="Hotel Category" />
               <TextField select fullWidth name="hotelCategory" value={formData.hotelCategory} onChange={handleChange} size="small">
                 {HOTEL_CATEGORY_OPTIONS.map((opt) => (
                   <MenuItem key={opt} value={opt}>{opt}</MenuItem>
@@ -462,10 +633,8 @@ export default function EditLeadModal({ open, onClose, lead }) {
               </TextField>
             </Grid>
 
-            <Grid item xs={12} sm={6} md={4}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', mb: 0.5, display: 'block', textTransform: 'uppercase', fontSize: 11 }}>
-                Meal Plan
-              </Typography>
+            <Grid item xs={12} sm={6} md={3}>
+              <FieldLabel label="Meal Plan" />
               <TextField select fullWidth name="mealPreference" value={formData.mealPreference} onChange={handleChange} size="small">
                 {MEAL_OPTIONS.map((opt) => (
                   <MenuItem key={opt} value={opt}>{opt}</MenuItem>
@@ -473,60 +642,82 @@ export default function EditLeadModal({ open, onClose, lead }) {
               </TextField>
             </Grid>
 
-            <Grid item xs={6} sm={4} md={2}>
-              <FormControlLabel
-                control={<Switch checked={formData.flightRequired} name="flightRequired" onChange={handleChange} color="primary" />}
-                label={<Typography variant="body2" sx={{ fontWeight: 600, fontSize: 12 }}>Flight Required</Typography>}
-              />
+            <Grid item xs={12} sm={6} md={3}>
+              <FieldLabel label="Transportation Required" />
+              <TextField select fullWidth name="transportationRequired" value={formData.transportationRequired} onChange={handleChange} size="small">
+                {TRANSPORTATION_OPTIONS.map((opt) => (
+                  <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                ))}
+              </TextField>
             </Grid>
 
-            <Grid item xs={6} sm={4} md={2}>
-              <FormControlLabel
-                control={<Switch checked={formData.trainRequired} name="trainRequired" onChange={handleChange} color="primary" />}
-                label={<Typography variant="body2" sx={{ fontWeight: 600, fontSize: 12 }}>Train Required</Typography>}
-              />
+            {/* Change #3: Flight Required, Visa Required, Travel Insurance -> Yes/No Dropdowns */}
+            <Grid item xs={12} sm={4} md={4}>
+              <FieldLabel label="Flight Required — Yes/No" />
+              <TextField
+                select
+                fullWidth
+                name="flightRequired"
+                value={formData.flightRequired}
+                onChange={handleChange}
+                size="small"
+              >
+                <MenuItem value="Yes">Yes</MenuItem>
+                <MenuItem value="No">No</MenuItem>
+              </TextField>
             </Grid>
 
-            <Grid item xs={6} sm={4} md={2}>
-              <FormControlLabel
-                control={<Switch checked={formData.cabRequired} name="cabRequired" onChange={handleChange} color="primary" />}
-                label={<Typography variant="body2" sx={{ fontWeight: 600, fontSize: 12 }}>Cab Required</Typography>}
-              />
+            <Grid item xs={12} sm={4} md={4}>
+              <FieldLabel label="Visa Required — Yes/No" />
+              <TextField
+                select
+                fullWidth
+                name="visaRequired"
+                value={formData.visaRequired}
+                onChange={handleChange}
+                size="small"
+              >
+                <MenuItem value="Yes">Yes</MenuItem>
+                <MenuItem value="No">No</MenuItem>
+              </TextField>
             </Grid>
 
-            <Grid item xs={6} sm={4} md={2}>
-              <FormControlLabel
-                control={<Switch checked={formData.visaRequired} name="visaRequired" onChange={handleChange} color="primary" />}
-                label={<Typography variant="body2" sx={{ fontWeight: 600, fontSize: 12 }}>Visa Required</Typography>}
-              />
-            </Grid>
-
-            <Grid item xs={6} sm={4} md={2}>
-              <FormControlLabel
-                control={<Switch checked={formData.passportAvailable} name="passportAvailable" onChange={handleChange} color="primary" />}
-                label={<Typography variant="body2" sx={{ fontWeight: 600, fontSize: 12 }}>Passport Available</Typography>}
-              />
-            </Grid>
-
-            <Grid item xs={6} sm={4} md={2}>
-              <FormControlLabel
-                control={<Switch checked={formData.travelInsuranceRequired} name="travelInsuranceRequired" onChange={handleChange} color="primary" />}
-                label={<Typography variant="body2" sx={{ fontWeight: 600, fontSize: 12 }}>Travel Insurance</Typography>}
-              />
+            <Grid item xs={12} sm={4} md={4}>
+              <FieldLabel label="Travel Insurance — Yes/No" />
+              <TextField
+                select
+                fullWidth
+                name="travelInsuranceRequired"
+                value={formData.travelInsuranceRequired}
+                onChange={handleChange}
+                size="small"
+              >
+                <MenuItem value="Yes">Yes</MenuItem>
+                <MenuItem value="No">No</MenuItem>
+              </TextField>
             </Grid>
 
             {/* Section 4: Lead Management */}
             <Grid item xs={12} sx={{ mt: 1 }}>
-              <Typography variant="caption" sx={{ fontWeight: 800, color: '#2563EB', textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', mb: 0.5 }}>
-                4. Lead Management & Assignment
+              <Typography
+                variant="caption"
+                sx={{
+                  fontWeight: 800,
+                  color: '#2563EB',
+                  textTransform: 'uppercase',
+                  letterSpacing: 0.5,
+                  display: 'block',
+                  mb: 0.5,
+                  fontSize: 12,
+                }}
+              >
+                4. Lead Management
               </Typography>
               <Divider />
             </Grid>
 
             <Grid item xs={12} sm={6} md={3}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', mb: 0.5, display: 'block', textTransform: 'uppercase', fontSize: 11 }}>
-                Lead Status
-              </Typography>
+              <FieldLabel label="Lead Status" />
               <TextField select fullWidth name="leadStatus" value={formData.leadStatus} onChange={handleChange} size="small">
                 {LEAD_STATUS_OPTIONS.map((opt) => (
                   <MenuItem key={opt} value={opt}>{opt}</MenuItem>
@@ -535,9 +726,16 @@ export default function EditLeadModal({ open, onClose, lead }) {
             </Grid>
 
             <Grid item xs={12} sm={6} md={3}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', mb: 0.5, display: 'block', textTransform: 'uppercase', fontSize: 11 }}>
-                Priority
-              </Typography>
+              <FieldLabel label="Lead Stage" />
+              <TextField select fullWidth name="leadStage" value={formData.leadStage} onChange={handleChange} size="small">
+                {LEAD_STAGE_OPTIONS.map((opt) => (
+                  <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                ))}
+              </TextField>
+            </Grid>
+
+            <Grid item xs={12} sm={6} md={3}>
+              <FieldLabel label="Priority" />
               <TextField select fullWidth name="priority" value={formData.priority} onChange={handleChange} size="small">
                 {PRIORITY_OPTIONS.map((opt) => (
                   <MenuItem key={opt} value={opt}>{opt}</MenuItem>
@@ -546,10 +744,8 @@ export default function EditLeadModal({ open, onClose, lead }) {
             </Grid>
 
             <Grid item xs={12} sm={6} md={3}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', mb: 0.5, display: 'block', textTransform: 'uppercase', fontSize: 11 }}>
-                Assigned Executive
-              </Typography>
-              <TextField select fullWidth name="assignedSalesUser" value={formData.assignedSalesUser} onChange={handleChange} size="small">
+              <FieldLabel label="Assigned Executive" required />
+              <TextField select fullWidth name="assignedSalesUser" value={formData.assignedSalesUser} onChange={handleChange} size="small" required>
                 {SALES_USERS.map((usr) => (
                   <MenuItem key={usr} value={usr}>{usr}</MenuItem>
                 ))}
@@ -557,27 +753,44 @@ export default function EditLeadModal({ open, onClose, lead }) {
             </Grid>
 
             <Grid item xs={12} sm={6} md={3}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', mb: 0.5, display: 'block', textTransform: 'uppercase', fontSize: 11 }}>
-                Lead Source
-              </Typography>
-              <TextField select fullWidth name="source" value={formData.source} onChange={handleChange} size="small">
+              <FieldLabel label="Lead Source" required />
+              <TextField select fullWidth name="source" value={formData.source} onChange={handleChange} size="small" required>
                 {SOURCE_OPTIONS.map((opt) => (
                   <MenuItem key={opt} value={opt}>{opt}</MenuItem>
                 ))}
               </TextField>
             </Grid>
 
-            <Grid item xs={12} sm={6} md={4}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', mb: 0.5, display: 'block', textTransform: 'uppercase', fontSize: 11 }}>
-                Expected Booking Date
-              </Typography>
-              <TextField fullWidth name="expectedBookingDate" value={formData.expectedBookingDate} onChange={handleChange} size="small" />
+            <Grid item xs={12} sm={6} md={3}>
+              <FieldLabel label="Expected Booking Date" />
+              <TextField fullWidth type="date" name="expectedBookingDate" value={formData.expectedBookingDate} onChange={handleChange} size="small" InputLabelProps={{ shrink: true }} />
             </Grid>
 
-            <Grid item xs={12} sm={6} md={8}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', mb: 0.5, display: 'block', textTransform: 'uppercase', fontSize: 11 }}>
-                Probability ({formData.probabilityPct}%)
-              </Typography>
+            <Grid item xs={12} sm={6} md={3}>
+              <FieldLabel label="Estimated Deal Value ₹" />
+              <TextField
+                fullWidth
+                type="number"
+                name="estimatedDealValue"
+                value={formData.estimatedDealValue}
+                onChange={handleChange}
+                size="small"
+                InputProps={{
+                  startAdornment: <InputAdornment position="start">₹</InputAdornment>,
+                }}
+              />
+            </Grid>
+
+            {/* Change #2: Probability (%) — Default: 50% */}
+            <Grid item xs={12} sm={6} md={3}>
+              <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 0.5 }}>
+                <FieldLabel label="Probability (%)" />
+                <Chip
+                  label={`${formData.probabilityPct}%`}
+                  size="small"
+                  sx={{ height: 20, fontSize: 11, fontWeight: 700, bgcolor: '#EFF6FF', color: '#2563EB' }}
+                />
+              </Stack>
               <Slider
                 value={formData.probabilityPct}
                 onChange={(e, val) => setFormData((prev) => ({ ...prev, probabilityPct: val }))}
@@ -586,36 +799,41 @@ export default function EditLeadModal({ open, onClose, lead }) {
                 marks
                 min={0}
                 max={100}
-                sx={{ color: '#3B82F6' }}
+                sx={{ color: '#3B82F6', mt: 0.5 }}
               />
             </Grid>
 
             {/* Section 5: Follow-up Information */}
             <Grid item xs={12} sx={{ mt: 1 }}>
-              <Typography variant="caption" sx={{ fontWeight: 800, color: '#2563EB', textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', mb: 0.5 }}>
+              <Typography
+                variant="caption"
+                sx={{
+                  fontWeight: 800,
+                  color: '#2563EB',
+                  textTransform: 'uppercase',
+                  letterSpacing: 0.5,
+                  display: 'block',
+                  mb: 0.5,
+                  fontSize: 12,
+                }}
+              >
                 5. Follow-up Information
               </Typography>
               <Divider />
             </Grid>
 
             <Grid item xs={12} sm={6} md={4}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', mb: 0.5, display: 'block', textTransform: 'uppercase', fontSize: 11 }}>
-                Last Contact Date
-              </Typography>
-              <TextField fullWidth name="lastContactDate" value={formData.lastContactDate} onChange={handleChange} size="small" />
+              <FieldLabel label="Last Contact Date" />
+              <TextField fullWidth type="date" name="lastContactDate" value={formData.lastContactDate} onChange={handleChange} size="small" InputLabelProps={{ shrink: true }} />
             </Grid>
 
             <Grid item xs={12} sm={6} md={4}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', mb: 0.5, display: 'block', textTransform: 'uppercase', fontSize: 11 }}>
-                Next Follow-up Date
-              </Typography>
-              <TextField fullWidth name="nextFollowupDate" value={formData.nextFollowupDate} onChange={handleChange} size="small" />
+              <FieldLabel label="Next Follow-up Date" />
+              <TextField fullWidth type="date" name="nextFollowupDate" value={formData.nextFollowupDate} onChange={handleChange} size="small" InputLabelProps={{ shrink: true }} />
             </Grid>
 
             <Grid item xs={12} sm={6} md={4}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', mb: 0.5, display: 'block', textTransform: 'uppercase', fontSize: 11 }}>
-                Follow-up Mode
-              </Typography>
+              <FieldLabel label="Follow-up Mode" />
               <TextField select fullWidth name="followupMode" value={formData.followupMode} onChange={handleChange} size="small">
                 {FOLLOWUP_MODES.map((opt) => (
                   <MenuItem key={opt} value={opt}>{opt}</MenuItem>
@@ -624,21 +842,31 @@ export default function EditLeadModal({ open, onClose, lead }) {
             </Grid>
 
             <Grid item xs={12}>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', mb: 0.5, display: 'block', textTransform: 'uppercase', fontSize: 11 }}>
-                Follow-up Notes
-              </Typography>
+              <FieldLabel label="Follow-up Notes" />
               <TextField fullWidth multiline rows={2} name="followupNotes" value={formData.followupNotes} onChange={handleChange} />
             </Grid>
 
             {/* Section 6: Customer Requirements */}
             <Grid item xs={12} sx={{ mt: 1 }}>
-              <Typography variant="caption" sx={{ fontWeight: 800, color: '#2563EB', textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', mb: 0.5 }}>
+              <Typography
+                variant="caption"
+                sx={{
+                  fontWeight: 800,
+                  color: '#2563EB',
+                  textTransform: 'uppercase',
+                  letterSpacing: 0.5,
+                  display: 'block',
+                  mb: 0.5,
+                  fontSize: 12,
+                }}
+              >
                 6. Customer Requirements
               </Typography>
               <Divider />
             </Grid>
 
             <Grid item xs={12}>
+              <FieldLabel label="Customer Requirements" />
               <TextField
                 fullWidth
                 multiline
@@ -649,15 +877,8 @@ export default function EditLeadModal({ open, onClose, lead }) {
               />
             </Grid>
 
-            {/* Section 7: Internal Notes */}
-            <Grid item xs={12} sx={{ mt: 1 }}>
-              <Typography variant="caption" sx={{ fontWeight: 800, color: '#D97706', textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', mb: 0.5 }}>
-                7. Internal Notes (Staff Only)
-              </Typography>
-              <Divider />
-            </Grid>
-
             <Grid item xs={12}>
+              <FieldLabel label="Internal Notes" />
               <TextField
                 fullWidth
                 multiline
@@ -668,10 +889,61 @@ export default function EditLeadModal({ open, onClose, lead }) {
                 sx={{ bgcolor: '#FFFBEB' }}
               />
             </Grid>
+
+            {/* Section 7: Customer Classification */}
+            <Grid item xs={12} sx={{ mt: 1 }}>
+              <Typography
+                variant="caption"
+                sx={{
+                  fontWeight: 800,
+                  color: '#2563EB',
+                  textTransform: 'uppercase',
+                  letterSpacing: 0.5,
+                  display: 'block',
+                  mb: 0.5,
+                  fontSize: 12,
+                }}
+              >
+                7. Customer Classification
+              </Typography>
+              <Divider />
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <FieldLabel label="Customer Type (Individual / Corporate / B2B)" />
+              <TextField
+                select
+                fullWidth
+                name="customerType"
+                value={formData.customerType}
+                onChange={handleChange}
+                size="small"
+              >
+                {CUSTOMER_TYPE_OPTIONS.map((opt) => (
+                  <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                ))}
+              </TextField>
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <FieldLabel label="Customer Category (New / Existing / Repeat / VIP)" />
+              <TextField
+                select
+                fullWidth
+                name="customerCategory"
+                value={formData.customerCategory}
+                onChange={handleChange}
+                size="small"
+              >
+                {CUSTOMER_CATEGORY_OPTIONS.map((opt) => (
+                  <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                ))}
+              </TextField>
+            </Grid>
           </Grid>
         </DialogContent>
 
-        <DialogActions sx={{ px: 3, pb: 2, pt: 1, gap: 1 }}>
+        <DialogActions sx={{ px: 3, pb: 2, pt: 1, gap: 1, borderTop: '1px solid #E2E8F0' }}>
           <Button onClick={onClose} variant="text" sx={{ color: '#64748B', fontWeight: 600, textTransform: 'none', px: 2 }}>
             Cancel
           </Button>
@@ -685,7 +957,7 @@ export default function EditLeadModal({ open, onClose, lead }) {
               borderRadius: '8px',
               px: 3,
               py: 1,
-              fontWeight: 600,
+              fontWeight: 700,
               textTransform: 'none',
             }}
           >
