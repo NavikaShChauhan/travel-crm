@@ -7,14 +7,13 @@ headers = []
 [functions."*"]
 
 [build]
-publish = "D:\\travel-crm\\dist"
+publish = "D:\\travel-crm\\frontend\\dist"
 publishOrigin = "config"
 commandOrigin = "config"
-base = "D:\\travel-crm"
+base = "D:\\travel-crm\\frontend"
 command = "npm run build"
 
 [build.environment]
-NODE_VERSION = "22"
 
 [build.processing]
 
